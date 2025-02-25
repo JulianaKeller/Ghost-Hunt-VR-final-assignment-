@@ -67,44 +67,7 @@ public class ThumbstickNavigation : MonoBehaviour
     private void ApplyDisplacement()
     {
         Vector2 input = steeringAction.action.ReadValue<Vector2>();
-        switch (inputMapping)
-        {
-            case InputMapping.PositionControl:
-                PositionControl(input);
-                break;
-            case InputMapping.VelocityControl:
-                VelocityControl(input);
-                break;
-            case InputMapping.AccelerationControl:
-                AccelerationControl(input);
-                break;
-        }
-    }
-
-    private void PositionControl(Vector2 input)
-    {
-        Vector2 positionInput = steeringAction.action.ReadValue<Vector2>();
-        
-        if(positionInput.sqrMagnitude > 0.01f){
-            positionInput = positionInput.normalized * movementSpeed;
-
-            //Vector3 displacement = new Vector3(positionInput.x, 0f, positionInput.y) * Time.deltaTime;
-            Vector3 movementDirection = head.forward.normalized * positionInput.y + head.right.normalized * positionInput.x;
-            movementDirection.y = 0;
-            Vector3 displacement = movementDirection * Time.deltaTime;
-
-            if((transform.position + displacement - startingPosition).sqrMagnitude > positionOffset*positionOffset){
-                //Debug.Log("Boundary reached, resetting position");
-                boundaryPassed = true;
-            }
-            else{
-                //Debug.Log("Boundary not reached");
-                transform.Translate(displacement, Space.World);
-            }
-        }
-        else if(boundaryPassed){
-            transform.position = startingPosition;
-        }
+        VelocityControl(input);
     }
     
     private void VelocityControl(Vector2 input)
@@ -121,55 +84,10 @@ public class ThumbstickNavigation : MonoBehaviour
 
             Vector3 movementDirection = head.forward.normalized * velocityInput.y + head.right.normalized * velocityInput.x;
             movementDirection.y = 0;
+            movementDirection = -movementDirection;
             Vector3 displacement = movementDirection * Time.deltaTime;
 
             transform.Translate(displacement, Space.World);
-        }
-    }
-    
-    private void AccelerationControl(Vector2 input)
-    {
-        Vector2 accelerationInput = steeringAction.action.ReadValue<Vector2>();
-
-        if(accelerationInput.sqrMagnitude > 0.01f){
-
-            if (!accelerationStarted){
-                accelerationStart = Time.time;
-                accelerationStarted = true;
-            }
-
-            accelerationFactor = Time.time - accelerationStart;
-
-            Debug.Log("Acceleration Factor: " + accelerationFactor);
-            Debug.Log("Acceleration Start: " + accelerationStart);
-
-            accelerationFactor = accelerationFactor * accelerationFactorControl;
-
-            if(accelerationFactor > maxAcceleration){
-                accelerationFactor = maxAcceleration;
-            }
-
-            accelerationInput = accelerationInput * movementSpeed;
-            if(accelerationInput.sqrMagnitude > steeringSpeed*steeringSpeed){
-                accelerationInput = accelerationInput.normalized * steeringSpeed;
-            }
-
-            accelerationInput = accelerationInput * accelerationFactor;
-            if(accelerationInput.sqrMagnitude > maxVelocity*maxVelocity){
-                accelerationInput = accelerationInput.normalized * maxVelocity;
-            }
-
-            //Vector3 displacement = new Vector3(accelerationInput.x, 0f, accelerationInput.y) * Time.deltaTime;
-
-            Vector3 movementDirection = head.forward.normalized * accelerationInput.y + head.right.normalized * accelerationInput.x;
-            movementDirection.y = 0;
-            Vector3 displacement = movementDirection * Time.deltaTime;
-
-            transform.Translate(displacement, Space.World);
-        }
-        else {
-            accelerationFactor = 0f;
-            accelerationStarted = false;
         }
     }
     

@@ -128,7 +128,7 @@ MonoBehaviour:
   rotationChanceIncreaseRate: 0.0001
   Boundary:
     serializedVersion: 2
-    m_Bits: 256
+    m_Bits: 128
   Ghosts:
     serializedVersion: 2
     m_Bits: 512

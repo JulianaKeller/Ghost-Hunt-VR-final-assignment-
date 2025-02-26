@@ -5,6 +5,9 @@ TagManager:
   serializedVersion: 2
   tags:
   - Peer
+  - Tools
+  - Hand
+  - Ghost
   layers:
   - Default
   - TransparentFX
@@ -13,9 +16,9 @@ TagManager:
   - Water
   - UI
   - PostProcessing
-  - 
-  - 
-  - 
+  - Boundary
+  - Wall
+  - Ghosts
   - 
   - 
   - 

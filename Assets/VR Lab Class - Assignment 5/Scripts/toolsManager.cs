@@ -3,8 +3,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.XR.Interaction.Toolkit;
+using Unity.Netcode;
 
-public class toolsManager : MonoBehaviour
+public class toolsManager : NetworkBehaviour
 {
 
     public GameObject toolsCollection;
@@ -18,6 +19,8 @@ public class toolsManager : MonoBehaviour
 
     void Start()
     {
+        if (!IsOwner) return;
+
         currentToolIndex = 0;
         nextToolIndex = 0;
 
@@ -37,21 +40,48 @@ public class toolsManager : MonoBehaviour
 
     void Update()
     {
-        if(switchAction.action.WasPressedThisFrame()){
+        if (!IsOwner) return;
+
+        if (switchAction.action.WasPressedThisFrame()){
             NextTool();
         }
     }
 
-    private void NextTool(){
-        nextToolIndex = currentToolIndex + 1;
-        if(nextToolIndex >= toolsCollection.transform.childCount){
-            nextToolIndex = 0;
+    private void RequestToolSwitch()
+    {
+        if (toolAccessHandler)
+        {
+            toolAccessHandler.GetComponent<ToolAccessHandler>().RequestAccessServerRpc(nextToolIndex);
         }
-        Debug.Log("NextToolIndex: " + nextToolIndex);
-        SwitchTool();
     }
 
-    private void SwitchTool(){
+    public void OnAccessGranted(int toolIndex)
+    {
+        tools[currentToolIndex].SetActive(false);
+        toolAccessHandler.GetComponent<ToolAccessHandler>().ReleaseServerRpc(currentToolIndex);
+
+        tools[toolIndex].SetActive(true);
+        currentToolIndex = toolIndex;
+    }
+
+    public void OnAccessDenied()
+    {
+        NextTool();
+    }
+
+    private void NextTool()
+    {
+        nextToolIndex = currentToolIndex + 1;
+        if (nextToolIndex >= toolsCollection.transform.childCount)
+        {
+            nextToolIndex = 0;
+        }
+
+        RequestToolSwitch();
+    }
+
+    //Veraltet
+    /*private void SwitchTool(){
         tools[currentToolIndex].SetActive(false);
         toolAccessHandler.GetComponent<ToolAccessHandler>().Release(currentToolIndex);
         
@@ -65,9 +95,10 @@ public class toolsManager : MonoBehaviour
             Debug.Log("Tool already in use...");
             NextTool();
         }
-    }
+    }*/
 
-    private bool canUse(){
+    //Veraltet
+    /*private bool canUse(){
         return toolAccessHandler.GetComponent<ToolAccessHandler>().RequestAccess(nextToolIndex);
-    }
+    }*/
 }

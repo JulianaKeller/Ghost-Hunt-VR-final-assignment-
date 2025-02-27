@@ -10,6 +10,7 @@ public class FlashlightLogic : NetworkBehaviour
     public float flashRange = 10f;        // Maximum distance the flash can reach
     public float flashDuration = 0.2f;    // Duration of the flash effect
     public float paralysisDuration = 3f;  // How long ghosts stay paralyzed
+    public float cooldownDuration = 1f;
 
     [Header("VR Input")]
     public InputActionProperty triggerAction; // Assign this to the Quest 2 trigger button
@@ -45,10 +46,9 @@ public class FlashlightLogic : NetworkBehaviour
         // Raycast in front of the flashlight to detect ghosts
         if (Physics.Raycast(transform.position, transform.forward, out RaycastHit hit, flashRange, ghostLayer))
         {
-            if (hit.collider.CompareTag("Ghost"))
+            if (hit.collider.CompareTag("Ghost")) //ToDo check tag
             {
-                // Try to get the Ghost script and paralyze it
-                    hit.collider.GetComponent<GhostBehaviour>().ParalyzeServerRpc(paralysisDuration);
+                hit.collider.GetComponent<GhostBehaviour>().ParalyzeServerRpc(paralysisDuration);
             }
         }
 
@@ -57,7 +57,7 @@ public class FlashlightLogic : NetworkBehaviour
         flashlightLight.enabled = false;
 
         // Small cooldown before allowing another flash
-        yield return new WaitForSeconds(1f);
+        yield return new WaitForSeconds(cooldownDuration);
         canFlash = true;
     }
 }

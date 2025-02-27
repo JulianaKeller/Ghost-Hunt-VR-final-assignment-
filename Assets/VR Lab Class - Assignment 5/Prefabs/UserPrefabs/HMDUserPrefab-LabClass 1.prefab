@@ -1336,7 +1336,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 2956674514
+  GlobalObjectIdHash: 112306705
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -1543,6 +1543,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   toolsCollection: {fileID: 0}
+  switchAction:
+    m_UseReference: 1
+    m_Action:
+      m_Name: Switch
+      m_Type: 0
+      m_ExpectedControlType: 
+      m_Id: 13da7d30-9c1f-416c-a276-73b849f71850
+      m_Processors: 
+      m_Interactions: 
+      m_SingletonActionBindings: []
+      m_Flags: 0
+    m_Reference: {fileID: 503507919125330071, guid: d86920191e7b0cb41a4a7e1ff8fc9a2e, type: 3}
+  toolAccessHandler: {fileID: 0}
 --- !u!1 &7216047634103647853
 GameObject:
   m_ObjectHideFlags: 0

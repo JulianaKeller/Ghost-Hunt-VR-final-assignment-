@@ -11,7 +11,7 @@ public class toolsManager : NetworkBehaviour
     public GameObject toolsCollection;
     public InputActionProperty switchAction;
 
-    public GameObject toolAccessHandler;
+    private GameObject toolAccessHandler;
 
     private List<GameObject> tools = new List<GameObject>();
     private int currentToolIndex;
@@ -20,6 +20,11 @@ public class toolsManager : NetworkBehaviour
     void Start()
     {
         if (!IsOwner) return;
+
+        toolAccessHandler = GameObject.Find("ToolAccessHandler");
+        if(toolAccessHandler != null){
+            Debug.Log("Found ToolAccessHandler.");
+        }
 
         currentToolIndex = 0;
         nextToolIndex = 0;

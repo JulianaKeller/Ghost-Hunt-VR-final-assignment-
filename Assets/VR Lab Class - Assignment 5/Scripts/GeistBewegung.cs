@@ -1,8 +1,9 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Unity.Netcode;
 
-public class GeistBewegung : MonoBehaviour
+public class GeistBewegung : NetworkBehaviour
 {
     public float animationSpeed = 1.0f;
     public float movementSpeedMultiplier = 1.0f; // Bewegungsgeschwindigkeit
@@ -17,6 +18,9 @@ public class GeistBewegung : MonoBehaviour
     private float rotationChance = 0f;
     private Animator animator;
 
+    private bool isParalyzed = false;
+    private bool isStunned = false;
+
     void Start()
     {
         animator = GetComponent<Animator>();
@@ -27,9 +31,14 @@ public class GeistBewegung : MonoBehaviour
     {
         animator.speed = animationSpeed;
 
-        MoveForward();
-        IncreaseRotationChance();
-        TryRandomRotation();
+        if(!isParalyzed && !isStunned){
+            MoveForward();
+            IncreaseRotationChance();
+            TryRandomRotation();
+        }
+        else{
+            Debug.Log("Paralyzed or stunned.");
+        }
     }
 
     void MoveForward()
@@ -69,5 +78,36 @@ public class GeistBewegung : MonoBehaviour
     {
         float randomAngle = Random.Range(minAngle, maxAngle);
         transform.Rotate(Vector3.up, randomAngle);
+    }
+
+    [Rpc(SendTo.Server)]
+    public void StunLaserServerRpc()
+    {
+        isStunned = true;
+        animator.SetBool("isStunned", true);
+    }
+
+    [Rpc(SendTo.Server)]
+    public void UnstunLaserServerRpc()
+    {
+        isStunned = false;
+        animator.SetBool("isStunned", false);
+    }
+
+    [Rpc(SendTo.Server)]
+    public void ParalyzeFlashServerRpc(float duration)
+    {
+        StartCoroutine(Paralyze(duration));
+    }
+
+    private IEnumerator Paralyze(float duration)
+    {
+        isParalyzed = true;
+        animator.SetBool("isParalyzed", true);
+
+        yield return new WaitForSeconds(duration);
+
+        isParalyzed = false;
+        animator.SetBool("isParalyzed", false);
     }
 }

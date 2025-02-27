@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Unity.Netcode;
 
 public class SpawnGhosts : MonoBehaviour
 {
@@ -49,6 +50,8 @@ public class SpawnGhosts : MonoBehaviour
             Transform spawnPoint = spawnPoints[Random.Range(0, spawnPoints.Length)];
             Quaternion randomRotation = Quaternion.Euler(0, Random.Range(0f, 360f), 0);
             GameObject newGhost = Instantiate(ghostPrefab, spawnPoint.position, randomRotation);
+            var instanceNetworkObject = newGhost.GetComponent<NetworkObject>();
+            instanceNetworkObject.Spawn();
             activeGhosts.Add(newGhost);
         }
     }

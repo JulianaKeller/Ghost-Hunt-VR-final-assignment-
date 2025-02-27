@@ -3,21 +3,28 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using Unity.Netcode;
+using UnityEngine.XR.Interaction.Toolkit;
 
 public class PlasmaGunLogic : MonoBehaviour
 {
     [Header("Plasma Gun Settings")]
+    
     public float laserRange = 10f;        // Maximum distance the flash can reach
-    public float maxDuration = 0.2f;    // Duration of the flash effect
-    public float cooldownDuration = 1f;
+    public float maxDuration = 10f;    // Duration of the  effect
+    public float rechargeTime = 5f;
+    public float paralysisTime = 3f;
+    
 
     [Header("VR Input")]
     public InputActionProperty triggerAction; // Assign this to the Quest 2 trigger button
 
     [Header("References")]
     public LayerMask ghostLayer;   // Ensure this is set to the "Ghosts" layer in the Inspector
+    public LineRenderer laserLine;
 
-    private bool canTurnOn = true; // Cooldown to prevent spamming
+    private bool isFiring = false;
+    private bool isRecharging = false;
+    private Transform targetGhost = null;
 
     // Start is called before the first frame update
     void Start()
@@ -28,35 +35,77 @@ public class PlasmaGunLogic : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (triggerAction.action.IsPressed() && canTurnOn)
+        if (isRecharging) return;
+
+        if (triggerAction.action.IsPressed()) // Trigger gedrückt
         {
-            StartCoroutine(Laser());
+            StartFiring();
         }
-        if (triggerAction.action.WasReleasedThisFrame())
+        else if (triggerAction.action.WasReleasedThisFrame()) // Trigger losgelassen
         {
-            //disable laser
-            //stop coroutine
+            StopFiring();
+        }
+
+        if (isFiring)
+        {
+            UpdateLaser();
         }
     }
 
-    private IEnumerator Laser()
+    void StartFiring()
     {
-        canTurnOn = false;
+        isFiring = true;
+        laserLine.enabled = true;
+    }
 
-        //enable laser
+    void StopFiring()
+    {
+        isFiring = false;
+        laserLine.enabled = false;
 
-        if (Physics.Raycast(transform.position, transform.forward, out RaycastHit hit, laserRange, ghostLayer))
+        if (targetGhost)
         {
-            if (hit.collider.CompareTag("Ghost")) //ToDo check tag
+            targetGhost.GetComponent<GeistBewegung>().UnstunLaserServerRpc();
+            targetGhost = null;
+        }
+    }
+
+    void UpdateLaser()
+    {
+        RaycastHit hit;
+        Vector3 laserStart = transform.position;
+        Vector3 laserDirection = transform.forward;
+
+        laserLine.SetPosition(0, laserStart);
+
+        if (Physics.Raycast(laserStart, laserDirection, out hit, laserRange, LayerMask.GetMask("Ghosts")))
+        {
+            laserLine.SetPosition(1, hit.point);
+
+            if (targetGhost == null)
             {
-                // Paralyze the ghost while the ghost is hit by the raycast
+                targetGhost = hit.transform;
+                targetGhost.GetComponent<GeistBewegung>().StunLaserServerRpc();
+                StartCoroutine(LaserDuration());
             }
         }
+        else
+        {
+            laserLine.SetPosition(1, laserStart + laserDirection * laserRange);
+        }
+    }
 
-        yield return new WaitForSeconds(maxDuration);
-        //disable laser
+    IEnumerator LaserDuration()
+    {
+        yield return new WaitForSeconds(paralysisTime);
+        StopFiring();
+        StartCoroutine(RechargeLaser());
+    }
 
-        yield return new WaitForSeconds(cooldownDuration); //maybe this should be a recharging time instead
-        canTurnOn = true;
+    IEnumerator RechargeLaser()
+    {
+        isRecharging = true;
+        yield return new WaitForSeconds(rechargeTime);
+        isRecharging = false;
     }
 }

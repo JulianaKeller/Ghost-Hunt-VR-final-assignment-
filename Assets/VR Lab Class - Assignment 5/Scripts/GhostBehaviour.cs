@@ -32,6 +32,8 @@ public class GhostBehaviour : NetworkBehaviour
     {
         isParalyzed = true;
 
+        
+
         yield return new WaitForSeconds(duration);
 
         isParalyzed = false;

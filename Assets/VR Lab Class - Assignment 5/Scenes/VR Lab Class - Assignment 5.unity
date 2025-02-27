@@ -6937,7 +6937,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f6b326eaac9f9eb448812411fc97f7e6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  toolsCollection: {fileID: 0}
 --- !u!4 &1111886375
 Transform:
   m_ObjectHideFlags: 0
@@ -7939,7 +7938,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 974017ef7e296e547a3b3b7a757f65c1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ghostPrefab: {fileID: 1374992895553849855, guid: 490b86f1233be924da0723b1e6831e68, type: 3}
+  ghostPrefab: {fileID: 1088198057634680078, guid: 0eae14eaed0e1bd45b98c4dcc2c8b670, type: 3}
   spawnPointsParent: {fileID: 874803138}
   minGhostCount: 3
   spawnInterval: 5

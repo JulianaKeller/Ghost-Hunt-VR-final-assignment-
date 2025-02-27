@@ -4,7 +4,8 @@ using UnityEngine;
 
 public class GeistBewegung : MonoBehaviour
 {
-    public float speed = 5f; // Bewegungsgeschwindigkeit
+    public float animationSpeed = 1.0f;
+    public float movementSpeedMultiplier = 1.0f; // Bewegungsgeschwindigkeit
     public float minRotationAngleBoundary = 90f; // Maximale Rotationswinkel
     public float maxRotationAngleBoundary = 270f;
     public float maxRotationAngleRandomRotation = 90f; // Maximale Rotationswinkel
@@ -14,14 +15,18 @@ public class GeistBewegung : MonoBehaviour
 
     private float timeSinceLastTurn = 0f;
     private float rotationChance = 0f;
+    private Animator animator;
 
     void Start()
     {
-
+        animator = GetComponent<Animator>();
+        
     }
 
     void Update()
     {
+        animator.speed = animationSpeed;
+
         MoveForward();
         IncreaseRotationChance();
         TryRandomRotation();
@@ -29,7 +34,7 @@ public class GeistBewegung : MonoBehaviour
 
     void MoveForward()
     {
-        transform.Translate(Vector3.forward * speed * Time.deltaTime);
+        transform.Translate(Vector3.forward * movementSpeedMultiplier * Time.deltaTime);
     }
 
     void OnTriggerEnter(Collider other)

@@ -21,24 +21,38 @@ public class GeistBewegung : NetworkBehaviour
     private bool isParalyzed = false;
     private bool isStunned = false;
 
+    private float WalkingV1Chance = 0;
+    private float IdleChance = 0;
+
     void Start()
     {
         animator = GetComponent<Animator>();
-        
+
+        //Randomly change walking animation
+        InvokeRepeating(nameof(UpdateWalkingAnimation), 2f, 2f); // Alle 2 Sekunden checken
     }
 
     void Update()
     {
         animator.speed = animationSpeed;
 
-        if(!isParalyzed && !isStunned){
+        if (!isParalyzed && !isStunned && !animator.GetCurrentAnimatorStateInfo(0).IsName("Drunk Idle"))
+        {
             MoveForward();
             IncreaseRotationChance();
             TryRandomRotation();
         }
         else{
-            Debug.Log("Paralyzed or stunned.");
+            Debug.Log("Paralyzed or stunned or idle.");
         }
+    }
+
+    void UpdateWalkingAnimation()
+    {
+        WalkingV1Chance = Random.Range(0.0f, 1.0f); // Gibt einen Wert zwischen 0 und 1 zurück
+        animator.SetFloat("walkingV1Chance", WalkingV1Chance);
+        IdleChance = Random.Range(0.0f, 1.0f);
+        animator.SetFloat("IdleChance", IdleChance);
     }
 
     void MoveForward()

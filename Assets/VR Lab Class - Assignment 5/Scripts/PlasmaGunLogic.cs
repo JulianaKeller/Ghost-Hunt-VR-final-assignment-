@@ -21,6 +21,7 @@ public class PlasmaGunLogic : MonoBehaviour
     [Header("References")]
     public LayerMask ghostLayer;   // Ensure this is set to the "Ghosts" layer in the Inspector
     public LineRenderer laserLine;
+    public LineRenderer plasmaLine;
 
     private bool isFiring = false;
     private bool isRecharging = false;
@@ -56,12 +57,14 @@ public class PlasmaGunLogic : MonoBehaviour
     {
         isFiring = true;
         laserLine.enabled = true;
+        plasmaLine.enabled = false;
     }
 
     void StopFiring()
     {
         isFiring = false;
         laserLine.enabled = false;
+        plasmaLine.enabled = false;
 
         if (targetGhost)
         {
@@ -77,10 +80,16 @@ public class PlasmaGunLogic : MonoBehaviour
         Vector3 laserDirection = transform.forward;
 
         laserLine.SetPosition(0, laserStart);
+        plasmaLine.SetPosition(0, laserStart);
 
         if (Physics.Raycast(laserStart, laserDirection, out hit, laserRange, LayerMask.GetMask("Ghosts")))
         {
             laserLine.SetPosition(1, hit.point);
+            plasmaLine.SetPosition(1, hit.point);
+
+            // Plasma Linie aktivieren, normalen Laser ausblenden
+            laserLine.enabled = false;
+            plasmaLine.enabled = true;
 
             if (targetGhost == null)
             {
@@ -91,6 +100,8 @@ public class PlasmaGunLogic : MonoBehaviour
         }
         else
         {
+            laserLine.enabled = true;
+            plasmaLine.enabled = false;
             laserLine.SetPosition(1, laserStart + laserDirection * laserRange);
         }
     }

@@ -40,14 +40,14 @@ public class GeistBewegung : NetworkBehaviour
 
     //References
     private Animator animator;
-    private Renderer ghostRenderer;
+    public Renderer ghostRenderer;
     private Coroutine fadeCoroutine;
     private ParticleSystem ghostParticles;
     private ParticleSystem.EmissionModule particleEmission;
 
     // Network Variables (Synced across all clients)
     private NetworkVariable<bool> isVisible = new NetworkVariable<bool>(true, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
-    public NetworkVariable<bool> isParalyzed = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+    private NetworkVariable<bool> isParalyzed = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
     private NetworkVariable<bool> isStunned = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
     private NetworkVariable<float> walkingV1Chance = new NetworkVariable<float>(0f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
     private NetworkVariable<float> idleChance = new NetworkVariable<float>(0f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
@@ -56,7 +56,7 @@ public class GeistBewegung : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
-        fadeAlphas = new NetworkList<float>(NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+        Debug.Log("Entering onNetworkSpawn...");
         if (IsServer)
         {
             // Start ghost movement and fading logic only on the server:
@@ -64,7 +64,19 @@ public class GeistBewegung : NetworkBehaviour
             //Randomly change walking animation
             InvokeRepeating(nameof(UpdateWalkingAnimation), 2f, 2f); // Alle 2 Sekunden checken
             // Start periodically fading and reappearing on the server
+            InitializeFadeList();
             StartFading();
+        }
+    }
+
+    void InitializeFadeList()
+    {
+        if (fadeAlphas.Count == 0)
+        {
+            foreach (Material mat in ghostRenderer.materials)
+            {
+                fadeAlphas.Add(1f); // Default to fully visible
+            }
         }
     }
 
@@ -72,7 +84,7 @@ public class GeistBewegung : NetworkBehaviour
     {
         //Get the components
         animator = GetComponent<Animator>();
-        ghostRenderer = GetComponentInChildren<Renderer>();
+        ghostRenderer = GetComponentInChildren<SkinnedMeshRenderer>();
         ghostParticles = GetComponentInChildren<ParticleSystem>(); // Find the particle system
         particleEmission = ghostParticles.emission;
 
@@ -124,6 +136,7 @@ public class GeistBewegung : NetworkBehaviour
 
     void StartFading()
     {
+        Debug.Log("Starting StartFading...");
         if (fadeCoroutine != null) //Ensure only one fading routine is running at a time
         {
             StopCoroutine(fadeCoroutine);
@@ -133,6 +146,7 @@ public class GeistBewegung : NetworkBehaviour
 
     private IEnumerator FadeInOutRoutine()
     {
+        Debug.Log("Starting FadeInOutRoutine...");
         while (true)
         {
             float fadeDuration = Random.Range(minFadeDuration, maxFadeDuration);
@@ -161,7 +175,13 @@ public class GeistBewegung : NetworkBehaviour
 
     private IEnumerator FadeTo(float targetAlpha, float duration)
     {
+        Debug.Log("Starting FadeTo...");
+        if(ghostRenderer == null)
+        {
+            Debug.Log("No renderer assigned!!!");
+        }
         Material[] materials = ghostRenderer.materials;
+        Debug.Log("Materials: " + materials.Length);
 
         float elapsedTime = 0f;
         float[] startAlphas = new float[materials.Length];
@@ -211,6 +231,7 @@ public class GeistBewegung : NetworkBehaviour
 
     private IEnumerator FadeParticlesTo(float targetRate, float duration)
     {
+        Debug.Log("Starting FadeParticlesTo...");
         float startRate = particleEmission.rateOverTime.constant;
         float elapsedTime = 0f;
 
@@ -220,6 +241,7 @@ public class GeistBewegung : NetworkBehaviour
             float newRate = Mathf.Lerp(startRate, targetRate, elapsedTime / duration);
             //Update emission rate network variable
             particleEmissionRate.Value = newRate;
+            Debug.Log("Server: Setting particle emission rate to " + particleEmissionRate.Value);
 
             yield return null; // Continues execution here next frame
         }
@@ -232,6 +254,7 @@ public class GeistBewegung : NetworkBehaviour
     {
         // Apply the synchronized emission rate to the particle system
         particleEmission.rateOverTime = targetRate;
+        //Debug.Log("Client: Applying particle emission rate to " + particleEmissionRate.Value);
     }
 
     #endregion
@@ -303,6 +326,11 @@ public class GeistBewegung : NetworkBehaviour
         isParalyzed.Value = true;
         yield return new WaitForSeconds(duration);
         isParalyzed.Value = false;
+    }
+
+    public bool IsParalyzed()
+    {
+        return isParalyzed.Value;
     }
 
     #endregion

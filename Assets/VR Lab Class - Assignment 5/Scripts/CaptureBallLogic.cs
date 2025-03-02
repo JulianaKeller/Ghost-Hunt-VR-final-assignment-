@@ -51,7 +51,7 @@ public class CaptureBallLogic : NetworkBehaviour
         {
             GameObject ghost = collision.gameObject;
 
-            if (ghost != null && ghost.GetComponent<GeistBewegung>().isParalyzed.Value) // Only capture if paralyzed
+            if (ghost != null && ghost.GetComponent<GeistBewegung>().IsParalyzed()) // Only capture if paralyzed
             {
                 CaptureGhost(ghost);
             }

@@ -4898,6 +4898,10 @@ PrefabInstance:
       propertyPath: m_Layer
       value: 9
       objectReference: {fileID: 0}
+    - target: {fileID: -8283360417625750647, guid: a38940ae63b55d44ca29687277f67c41, type: 3}
+      propertyPath: m_TagString
+      value: Ghost
+      objectReference: {fileID: 0}
     - target: {fileID: -8006009767450596044, guid: a38940ae63b55d44ca29687277f67c41, type: 3}
       propertyPath: m_Layer
       value: 9
@@ -5158,7 +5162,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 2032026557
+  GlobalObjectIdHash: 384584649
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -5244,6 +5248,7 @@ MonoBehaviour:
   Ghosts:
     serializedVersion: 2
     m_Bits: 512
+  ghostRenderer: {fileID: 8227975560381015064}
 --- !u!82 &4672898056015600024
 AudioSource:
   m_ObjectHideFlags: 0
@@ -5361,3 +5366,8 @@ MonoBehaviour:
   minVolume: 0
   minPauseDuration: 3
   maxPauseDuration: 10
+--- !u!137 &8227975560381015064 stripped
+SkinnedMeshRenderer:
+  m_CorrespondingSourceObject: {fileID: -1011968913627163577, guid: a38940ae63b55d44ca29687277f67c41, type: 3}
+  m_PrefabInstance: {fileID: 277929669290422367}
+  m_PrefabAsset: {fileID: 0}

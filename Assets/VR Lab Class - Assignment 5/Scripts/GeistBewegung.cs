@@ -45,13 +45,28 @@ public class GeistBewegung : NetworkBehaviour
     private ParticleSystem ghostParticles;
     private ParticleSystem.EmissionModule particleEmission;
 
-    //Bools
-    private bool isParalyzed = false;
-    private bool isStunned = false;
+    // Network Variables (Synced across all clients)
+    private NetworkVariable<bool> isVisible = new NetworkVariable<bool>(true, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+    public NetworkVariable<bool> isParalyzed = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+    private NetworkVariable<bool> isStunned = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+    private NetworkVariable<float> walkingV1Chance = new NetworkVariable<float>(0f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+    private NetworkVariable<float> idleChance = new NetworkVariable<float>(0f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+    private NetworkList<float> fadeAlphas = new NetworkList<float>();
+    private NetworkVariable<float> particleEmissionRate = new NetworkVariable<float>(0f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
 
-    //Animation change chances
-    private float WalkingV1Chance = 0;
-    private float IdleChance = 0;
+    public override void OnNetworkSpawn()
+    {
+        fadeAlphas = new NetworkList<float>(NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+        if (IsServer)
+        {
+            // Start ghost movement and fading logic only on the server:
+
+            //Randomly change walking animation
+            InvokeRepeating(nameof(UpdateWalkingAnimation), 2f, 2f); // Alle 2 Sekunden checken
+            // Start periodically fading and reappearing on the server
+            StartFading();
+        }
+    }
 
     void Start()
     {
@@ -61,12 +76,51 @@ public class GeistBewegung : NetworkBehaviour
         ghostParticles = GetComponentInChildren<ParticleSystem>(); // Find the particle system
         particleEmission = ghostParticles.emission;
 
-        //Randomly change walking animation
-        InvokeRepeating(nameof(UpdateWalkingAnimation), 2f, 2f); // Alle 2 Sekunden checken
-
-        // Start the fade effect
-        StartFading();
     }
+
+    void Update()
+    {
+        if (IsServer) // Only the server should control movement
+        {
+            if (!isParalyzed.Value && !isStunned.Value && !animator.GetCurrentAnimatorStateInfo(0).IsName("Drunk Idle"))
+            {
+                MoveForward();
+                IncreaseRotationChance();
+                TryRandomRotation();
+            }
+            else
+            {
+                Debug.Log("Paralyzed or stunned or idle.");
+            }
+        } 
+
+        animator.speed = animationSpeed;
+
+        // Al Clients apply the network variable values for the animator variables
+        animator.SetBool("isStunned", isStunned.Value);
+        animator.SetBool("isParalyzed", isParalyzed.Value);
+        animator.SetFloat("walkingV1Chance", walkingV1Chance.Value);
+        animator.SetFloat("IdleChance", idleChance.Value);
+
+        // All Clients apply the fadeAlpha/emission rate network value to ensure synchronization
+        ApplyFade();
+        ApplyParticleFade(particleEmissionRate.Value);
+    }
+
+    void UpdateWalkingAnimation()
+    {
+        if (!IsServer) return;
+
+        walkingV1Chance.Value = Random.Range(0.0f, 1.0f);
+        idleChance.Value = Random.Range(0.0f, 1.0f);
+    }
+
+    void MoveForward()
+    {
+        transform.Translate(Vector3.forward * movementSpeedMultiplier * Time.deltaTime);
+    }
+
+    #region Fading methods
 
     void StartFading()
     {
@@ -125,9 +179,8 @@ public class GeistBewegung : NetworkBehaviour
 
             for (int i = 0; i < materials.Length; i++)
             {
-                Color color = materials[i].color;
                 float newAlpha = Mathf.Lerp(startAlphas[i], targetAlpha, newAlphaFactor);
-                materials[i].color = new Color(color.r, color.g, color.b, newAlpha);
+                fadeAlphas[i] = newAlpha;
             }
 
             yield return null; //continues execution here next frame
@@ -136,8 +189,23 @@ public class GeistBewegung : NetworkBehaviour
         // Ensure final alpha is set correctly
         for (int i = 0; i < materials.Length; i++)
         {
-            Color color = materials[i].color;
-            materials[i].color = new Color(color.r, color.g, color.b, targetAlpha);
+            fadeAlphas[i] = targetAlpha;
+        }
+    }
+
+    private void ApplyFade()
+    {
+        if (ghostRenderer == null) return;
+
+        Material[] materials = ghostRenderer.materials;
+
+        for (int i = 0; i < materials.Length; i++)
+        {
+            if (i < fadeAlphas.Count)
+            {
+                Color color = materials[i].color;
+                materials[i].color = new Color(color.r, color.g, color.b, fadeAlphas[i]);
+            }
         }
     }
 
@@ -150,45 +218,30 @@ public class GeistBewegung : NetworkBehaviour
         {
             elapsedTime += Time.deltaTime;
             float newRate = Mathf.Lerp(startRate, targetRate, elapsedTime / duration);
-            particleEmission.rateOverTime = newRate;
+            //Update emission rate network variable
+            particleEmissionRate.Value = newRate;
 
             yield return null; // Continues execution here next frame
         }
 
         // Ensure final emission rate is set correctly
+        particleEmissionRate.Value = targetRate;
+    }
+
+    private void ApplyParticleFade(float targetRate)
+    {
+        // Apply the synchronized emission rate to the particle system
         particleEmission.rateOverTime = targetRate;
     }
 
-    void Update()
-    {
-        animator.speed = animationSpeed;
+    #endregion
 
-        if (!isParalyzed && !isStunned && !animator.GetCurrentAnimatorStateInfo(0).IsName("Drunk Idle"))
-        {
-            MoveForward();
-            IncreaseRotationChance();
-            TryRandomRotation();
-        }
-        else{
-            Debug.Log("Paralyzed or stunned or idle.");
-        }
-    }
-
-    void UpdateWalkingAnimation()
-    {
-        WalkingV1Chance = Random.Range(0.0f, 1.0f); // Gibt einen Wert zwischen 0 und 1 zurück
-        animator.SetFloat("walkingV1Chance", WalkingV1Chance);
-        IdleChance = Random.Range(0.0f, 1.0f);
-        animator.SetFloat("IdleChance", IdleChance);
-    }
-
-    void MoveForward()
-    {
-        transform.Translate(Vector3.forward * movementSpeedMultiplier * Time.deltaTime);
-    }
+    #region Rotation methods
 
     void OnTriggerEnter(Collider other)
     {
+        if (!IsServer) return;
+
         if (((1 << other.gameObject.layer) & Boundary) != 0 || ((1 << other.gameObject.layer) & Ghosts) != 0)
         {
             RotateRandomly(minRotationAngleBoundary, maxRotationAngleBoundary);
@@ -221,17 +274,21 @@ public class GeistBewegung : NetworkBehaviour
         transform.Rotate(Vector3.up, randomAngle);
     }
 
+    #endregion
+
+    #region RPCs
+
     [Rpc(SendTo.Server)]
     public void StunLaserServerRpc()
     {
-        isStunned = true;
+        isStunned.Value = true;
         animator.SetBool("isStunned", true);
     }
 
     [Rpc(SendTo.Server)]
     public void UnstunLaserServerRpc()
     {
-        isStunned = false;
+        isStunned.Value = false;
         animator.SetBool("isStunned", false);
     }
 
@@ -243,12 +300,11 @@ public class GeistBewegung : NetworkBehaviour
 
     private IEnumerator Paralyze(float duration)
     {
-        isParalyzed = true;
-        animator.SetBool("isParalyzed", true);
-
+        isParalyzed.Value = true;
         yield return new WaitForSeconds(duration);
-
-        isParalyzed = false;
-        animator.SetBool("isParalyzed", false);
+        isParalyzed.Value = false;
     }
+
+    #endregion
+
 }

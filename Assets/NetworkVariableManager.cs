@@ -9,8 +9,8 @@ public class NetworkVariableManager : NetworkBehaviour
 
     // Game-wide variables
     public NetworkVariable<int> CaughtGhostsCount = new NetworkVariable<int>(0);
-    public NetworkVariable<float> GameTime = new NetworkVariable<float>(0f);
-    public NetworkVariable<float> GameTimeLimit = new NetworkVariable<float>(300f); // Default to 5 minutes
+    public NetworkVariable<int> GameTime = new NetworkVariable<int>(0);
+    public NetworkVariable<int> GameTimeLimit = new NetworkVariable<int>(300); // Default to 5 minutes
     public NetworkVariable<int> GameDifficulty = new NetworkVariable<int>(1); // 1 = Easy, 2 = Medium, 3 = Hard
 
     // Variables affected by difficulty
@@ -56,7 +56,7 @@ public class NetworkVariableManager : NetworkBehaviour
                 LaserRechargeDuration.Value = 2f;
                 FlashlightCooldownDuration.Value = 0.5f;
                 VacuumDuration.Value = 2f;
-                GameTimeLimit.Value = 500f;
+                GameTimeLimit.Value = 500;
                 break;
 
             case 2: // Medium
@@ -68,7 +68,7 @@ public class NetworkVariableManager : NetworkBehaviour
                 LaserRechargeDuration.Value = 5f;
                 FlashlightCooldownDuration.Value = 1f;
                 VacuumDuration.Value = 4f;
-                GameTimeLimit.Value = 300f;
+                GameTimeLimit.Value = 300;
                 break;
 
             case 3: // Hard
@@ -80,7 +80,7 @@ public class NetworkVariableManager : NetworkBehaviour
                 LaserRechargeDuration.Value = 8f;
                 FlashlightCooldownDuration.Value = 2f;
                 VacuumDuration.Value = 6f;
-                GameTimeLimit.Value = 200f;
+                GameTimeLimit.Value = 200;
                 break;
 
             default:
@@ -90,7 +90,7 @@ public class NetworkVariableManager : NetworkBehaviour
     }
 
     // Sets the game timer (useful for synchronization)
-    public void SetGameTime(float time)
+    public void SetGameTime(int time)
     {
         if (IsServer)
         {
@@ -128,19 +128,19 @@ public class NetworkVariableManager : NetworkBehaviour
     }
 
     // Gets the current game time
-    public float GetGameTime()
+    public int GetGameTime()
     {
         return GameTime.Value;
     }
 
     // Gets the game time limit
-    public float GetGameTimeLimit()
+    public int GetGameTimeLimit()
     {
         return GameTimeLimit.Value;
     }
 
     // Sets the game time limit (Server Only)
-    public void SetGameTimeLimit(float timeLimit)
+    public void SetGameTimeLimit(int timeLimit)
     {
         if (IsServer)
         {

@@ -12,6 +12,10 @@ public class GameTimeManager : NetworkBehaviour
         {
             StartCoroutine(UpdateGameTime());
         }
+        else
+        {
+            Debug.Log("Not server");
+        }
     }
 
     // Coroutine to update the game time every second
@@ -25,12 +29,14 @@ public class GameTimeManager : NetworkBehaviour
             // Update game time on the server
             if (IsServer)
             {
+                Debug.Log("Updating Game Time...");
+                Debug.Log(NetworkVariableManager.Instance == null);
                 // Get the current game time and game time limit from the NetworkVariableManager
-                float currentTime = NetworkVariableManager.Instance.GetGameTime();
-                float gameTimeLimit = NetworkVariableManager.Instance.GetGameTimeLimit();
+                int currentTime = NetworkVariableManager.Instance.GetGameTime();
+                int gameTimeLimit = NetworkVariableManager.Instance.GetGameTimeLimit();
 
                 // Increase game time by 1 second
-                currentTime += 1f;
+                currentTime += 1;
 
                 // Set the new game time
                 NetworkVariableManager.Instance.SetGameTime(currentTime);
@@ -41,6 +47,10 @@ public class GameTimeManager : NetworkBehaviour
                     EndGame();
                     break; // Stop the coroutine after the game ends
                 }
+            }
+            else
+            {
+                Debug.Log("Not server");
             }
         }
     }

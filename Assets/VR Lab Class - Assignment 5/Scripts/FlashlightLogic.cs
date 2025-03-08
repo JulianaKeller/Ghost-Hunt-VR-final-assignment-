@@ -48,7 +48,14 @@ public class FlashlightLogic : NetworkBehaviour
         if (Physics.Raycast(transform.position, transform.up, out RaycastHit hit, flashRange, ghostLayer))
         {
             Debug.Log("Hit ghost.");
-            hit.collider.GetComponent<GeistBewegung>().ParalyzeFlashServerRpc(paralysisDuration);
+
+            GeistBewegung ghost = hit.collider.GetComponent<GeistBewegung>();
+            if (ghost != null)
+            {
+                // Change color and paralyze the ghost
+                ghost.ChangeColorServerRpc(Color.white, paralysisDuration);
+                ghost.ParalyzeFlashServerRpc(paralysisDuration);
+            }
         }
 
         // Flash duration before turning off

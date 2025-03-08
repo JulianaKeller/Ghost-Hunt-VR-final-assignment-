@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using Unity.Netcode;
 
-
 public class GeistBewegung : NetworkBehaviour
 {
     [Header("Animation and Movement Settings")]
@@ -16,23 +15,10 @@ public class GeistBewegung : NetworkBehaviour
     public float maxRotationAngleRandomRotation = 90f; // Maximale Rotationswinkel
     public float rotationChanceIncreaseRate = 0.1f; // Erhöhungsrate der Rotationswahrscheinlichkeit
 
-    [Header("Fading Settings")]
-    public float minFadeDuration = 5f;
-    public float maxFadeDuration = 15f;
-    public float minVisibleDuration = 10f;
-    public float maxVisibleDuration = 45f;
-    public float minInvisibleDuration = 10f;
-    public float maxInvisibleDuration = 30f;
-
-    [Header("Particle Fading Settings")]
-    public float particleFadeDelayIn = 0.5f; // Delay before particles fade in
-    public float particleFadeDelayOut = 0.5f; // Delay before particles fade out
-    public float maxParticleEmissionRate = 100f; // Max emission rate of particles when fully visible
-    public float minParticleEmissionRate = 0f; // Min emission rate of particles when fully invisible
-
     [Header("References")]
     public LayerMask Boundary; // Layer für Begrenzungsobjekte
     public LayerMask Ghosts; // Layer für Begrenzungsobjekte
+    [SerializeField] private Material ghostMaterial;
 
     //Rotation values
     private float timeSinceLastTurn = 0f;
@@ -40,10 +26,7 @@ public class GeistBewegung : NetworkBehaviour
 
     //References
     private Animator animator;
-    public Renderer ghostRenderer;
-    private Coroutine fadeCoroutine;
-    private ParticleSystem ghostParticles;
-    private ParticleSystem.EmissionModule particleEmission;
+    private Color originalColor = Color.black;
 
     // Network Variables (Synced across all clients)
     private NetworkVariable<bool> isVisible = new NetworkVariable<bool>(true, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
@@ -51,32 +34,16 @@ public class GeistBewegung : NetworkBehaviour
     private NetworkVariable<bool> isStunned = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
     private NetworkVariable<float> walkingV1Chance = new NetworkVariable<float>(0f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
     private NetworkVariable<float> idleChance = new NetworkVariable<float>(0f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
-    private NetworkList<float> fadeAlphas = new NetworkList<float>();
-    private NetworkVariable<float> particleEmissionRate = new NetworkVariable<float>(0f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
 
     public override void OnNetworkSpawn()
     {
-        Debug.Log("Entering onNetworkSpawn...");
+        //Debug.Log("Entering onNetworkSpawn...");
         if (IsServer)
         {
-            // Start ghost movement and fading logic only on the server:
+            // Start ghost movement only on the server:
 
             //Randomly change walking animation
             InvokeRepeating(nameof(UpdateWalkingAnimation), 2f, 2f); // Alle 2 Sekunden checken
-            // Start periodically fading and reappearing on the server
-            InitializeFadeList();
-            StartFading();
-        }
-    }
-
-    void InitializeFadeList()
-    {
-        if (fadeAlphas.Count == 0)
-        {
-            foreach (Material mat in ghostRenderer.materials)
-            {
-                fadeAlphas.Add(1f); // Default to fully visible
-            }
         }
     }
 
@@ -84,10 +51,14 @@ public class GeistBewegung : NetworkBehaviour
     {
         //Get the components
         animator = GetComponent<Animator>();
-        ghostRenderer = GetComponentInChildren<SkinnedMeshRenderer>();
-        ghostParticles = GetComponentInChildren<ParticleSystem>(); // Find the particle system
-        particleEmission = ghostParticles.emission;
-
+        if (ghostMaterial != null)
+        {
+            originalColor = ghostMaterial.color;
+        }
+        else
+        {
+            Debug.LogError("Ghost material is not assigned!", this);
+        }
     }
 
     void Update()
@@ -102,7 +73,7 @@ public class GeistBewegung : NetworkBehaviour
             }
             else
             {
-                Debug.Log("Paralyzed or stunned or idle.");
+                //Debug.Log("Paralyzed or stunned or idle.");
             }
         } 
 
@@ -113,10 +84,6 @@ public class GeistBewegung : NetworkBehaviour
         animator.SetBool("isParalyzed", isParalyzed.Value);
         animator.SetFloat("walkingV1Chance", walkingV1Chance.Value);
         animator.SetFloat("IdleChance", idleChance.Value);
-
-        // All Clients apply the fadeAlpha/emission rate network value to ensure synchronization
-        ApplyFade();
-        ApplyParticleFade(particleEmissionRate.Value);
     }
 
     void UpdateWalkingAnimation()
@@ -129,135 +96,12 @@ public class GeistBewegung : NetworkBehaviour
 
     void MoveForward()
     {
-        transform.Translate(Vector3.forward * movementSpeedMultiplier * Time.deltaTime);
+        //Fix random rotation problems where the ghost rotates not around the y axsis for no apparent reason :(
+        transform.rotation = Quaternion.Euler(0, transform.rotation.eulerAngles.y, 0);
+
+        Vector3 forwardDirection = Vector3.forward;
+        transform.Translate(new Vector3(forwardDirection.x, 0, forwardDirection.z) * movementSpeedMultiplier * Time.deltaTime);
     }
-
-    #region Fading methods
-
-    void StartFading()
-    {
-        Debug.Log("Starting StartFading...");
-        if (fadeCoroutine != null) //Ensure only one fading routine is running at a time
-        {
-            StopCoroutine(fadeCoroutine);
-        }
-        fadeCoroutine = StartCoroutine(FadeInOutRoutine());
-    }
-
-    private IEnumerator FadeInOutRoutine()
-    {
-        Debug.Log("Starting FadeInOutRoutine...");
-        while (true)
-        {
-            float fadeDuration = Random.Range(minFadeDuration, maxFadeDuration);
-
-            // Fade out ghost
-            yield return FadeTo(0f, fadeDuration);
-            // Delay for particle system fade out
-            yield return new WaitForSeconds(particleFadeDelayOut);
-            // Fade out particle system
-            yield return FadeParticlesTo(minParticleEmissionRate, fadeDuration);
-
-            //Stay invisible
-            yield return new WaitForSeconds(Random.Range(minInvisibleDuration, maxInvisibleDuration));
-
-            // Fade in particle system
-            yield return FadeParticlesTo(maxParticleEmissionRate, fadeDuration);
-            // Delay for ghost to fade in
-            yield return new WaitForSeconds(particleFadeDelayIn);
-            // Fade in ghost
-            yield return FadeTo(1f, fadeDuration);
-
-            //Stay visible
-            yield return new WaitForSeconds(Random.Range(minVisibleDuration, maxVisibleDuration));
-        }
-    }
-
-    private IEnumerator FadeTo(float targetAlpha, float duration)
-    {
-        Debug.Log("Starting FadeTo...");
-        if(ghostRenderer == null)
-        {
-            Debug.Log("No renderer assigned!!!");
-        }
-        Material[] materials = ghostRenderer.materials;
-        Debug.Log("Materials: " + materials.Length);
-
-        float elapsedTime = 0f;
-        float[] startAlphas = new float[materials.Length];
-
-        // Store initial alpha values
-        for (int i = 0; i < materials.Length; i++)
-        {
-            startAlphas[i] = materials[i].color.a;
-        }
-
-        while (elapsedTime < duration)
-        {
-            elapsedTime += Time.deltaTime;
-            float newAlphaFactor = elapsedTime / duration;
-
-            for (int i = 0; i < materials.Length; i++)
-            {
-                float newAlpha = Mathf.Lerp(startAlphas[i], targetAlpha, newAlphaFactor);
-                fadeAlphas[i] = newAlpha;
-            }
-
-            yield return null; //continues execution here next frame
-        }
-
-        // Ensure final alpha is set correctly
-        for (int i = 0; i < materials.Length; i++)
-        {
-            fadeAlphas[i] = targetAlpha;
-        }
-    }
-
-    private void ApplyFade()
-    {
-        if (ghostRenderer == null) return;
-
-        Material[] materials = ghostRenderer.materials;
-
-        for (int i = 0; i < materials.Length; i++)
-        {
-            if (i < fadeAlphas.Count)
-            {
-                Color color = materials[i].color;
-                materials[i].color = new Color(color.r, color.g, color.b, fadeAlphas[i]);
-            }
-        }
-    }
-
-    private IEnumerator FadeParticlesTo(float targetRate, float duration)
-    {
-        Debug.Log("Starting FadeParticlesTo...");
-        float startRate = particleEmission.rateOverTime.constant;
-        float elapsedTime = 0f;
-
-        while (elapsedTime < duration)
-        {
-            elapsedTime += Time.deltaTime;
-            float newRate = Mathf.Lerp(startRate, targetRate, elapsedTime / duration);
-            //Update emission rate network variable
-            particleEmissionRate.Value = newRate;
-            Debug.Log("Server: Setting particle emission rate to " + particleEmissionRate.Value);
-
-            yield return null; // Continues execution here next frame
-        }
-
-        // Ensure final emission rate is set correctly
-        particleEmissionRate.Value = targetRate;
-    }
-
-    private void ApplyParticleFade(float targetRate)
-    {
-        // Apply the synchronized emission rate to the particle system
-        particleEmission.rateOverTime = targetRate;
-        //Debug.Log("Client: Applying particle emission rate to " + particleEmissionRate.Value);
-    }
-
-    #endregion
 
     #region Rotation methods
 
@@ -302,35 +146,62 @@ public class GeistBewegung : NetworkBehaviour
     #region RPCs
 
     [Rpc(SendTo.Server)]
-    public void StunLaserServerRpc()
+    public void StunLaserServerRpc() //Laser
     {
         isStunned.Value = true;
         animator.SetBool("isStunned", true);
     }
 
     [Rpc(SendTo.Server)]
-    public void UnstunLaserServerRpc()
+    public void UnstunLaserServerRpc() //Laser
     {
         isStunned.Value = false;
         animator.SetBool("isStunned", false);
     }
 
     [Rpc(SendTo.Server)]
-    public void ParalyzeFlashServerRpc(float duration)
+    public void ParalyzeFlashServerRpc(float duration) //Flashlight
     {
         StartCoroutine(Paralyze(duration));
     }
 
-    private IEnumerator Paralyze(float duration)
+    private IEnumerator Paralyze(float duration) //Flashlight
     {
         isParalyzed.Value = true;
         yield return new WaitForSeconds(duration);
         isParalyzed.Value = false;
     }
 
-    public bool IsParalyzed()
+    [ServerRpc(RequireOwnership = false)]
+    public void ChangeColorServerRpc(Color newColor, float duration)
+    {
+        ChangeColorClientRpc(newColor, duration);
+    }
+
+    [ClientRpc]
+    private void ChangeColorClientRpc(Color newColor, float duration)
+    {
+        if (ghostMaterial != null)
+        {
+            StartCoroutine(ChangeColorTemporarily(newColor, duration));
+        }
+    }
+
+    private IEnumerator ChangeColorTemporarily(Color newColor, float duration) //make the material flash/light up while the ghost is paralized
+    {
+        ghostMaterial.color = newColor;
+        yield return new WaitForSeconds(duration);
+        ghostMaterial.color = originalColor;
+    }
+
+    public bool IsParalyzed() //Flashlight
     {
         return isParalyzed.Value;
+    }
+
+    public bool IsStunned() //Laser
+    {
+        return isStunned.Value;
     }
 
     #endregion

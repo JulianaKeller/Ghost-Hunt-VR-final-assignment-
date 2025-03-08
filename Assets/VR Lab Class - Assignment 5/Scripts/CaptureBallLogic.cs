@@ -10,7 +10,6 @@ public class CaptureBallLogic : NetworkBehaviour
     public LayerMask ghostLayer;
 
     private Rigidbody rb;
-    private XRGrabInteractable grabInteractable;
     private bool hasBeenThrown = false;
     private bool hasCaptured = false;
 
@@ -18,28 +17,33 @@ public class CaptureBallLogic : NetworkBehaviour
     void Start()
     {
         rb = GetComponent<Rigidbody>();
-        grabInteractable = GetComponent<XRGrabInteractable>();
 
         // Make sure gravity is disabled when the ball spawns
         rb.useGravity = false;
         rb.isKinematic = true;
 
         // Add event listeners for grabbing and releasing
-        grabInteractable.selectEntered.AddListener(OnGrab);
-        grabInteractable.selectExited.AddListener(OnRelease);
+        //grabInteractable.selectEntered.AddListener(OnGrab);
+        //grabInteractable.selectExited.AddListener(OnRelease);
     }
 
-    void OnGrab(SelectEnterEventArgs args)
+    void OnGrab(SelectEnterEventArgs args) //not needed, this is done in VirtualHand script
     {
         // Ball is being held, disable physics to avoid weird interactions
         rb.isKinematic = true;
+        rb.useGravity = false;
     }
 
-    void OnRelease(SelectExitEventArgs args)
+    void OnRelease(SelectExitEventArgs args) //not needed, this is done in VirtualHand script
     {
         // Ball is thrown, enable gravity and physics
         rb.isKinematic = false;
         rb.useGravity = true;
+        hasBeenThrown = true;
+    }
+
+    public void Throw()
+    {
         hasBeenThrown = true;
     }
 
@@ -49,10 +53,12 @@ public class CaptureBallLogic : NetworkBehaviour
 
         if (collision.gameObject.CompareTag("Ghost"))
         {
+            Debug.Log("CaptureBall collided with a ghost");
             GameObject ghost = collision.gameObject;
 
             if (ghost != null && ghost.GetComponent<GeistBewegung>().IsParalyzed()) // Only capture if paralyzed
             {
+                Debug.Log("Ghost is paralyized. CaptureBall is capturing ghost...");
                 CaptureGhost(ghost);
             }
         }
@@ -70,7 +76,7 @@ public class CaptureBallLogic : NetworkBehaviour
         rb.useGravity = false;
 
         //Call Capture on ghost
-
+        //ToDo
 
         // Destroy the ball after a delay
         Destroy(gameObject, hoverTimeAfterHit);

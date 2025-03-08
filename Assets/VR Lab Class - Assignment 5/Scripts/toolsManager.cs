@@ -34,7 +34,13 @@ public class toolsManager : NetworkBehaviour
             int children = toolsCollection.transform.childCount;
             Debug.Log("Tool Count: " + children);
             for (int i = 0; i < children; ++i){
-                tools.Add(toolsCollection.transform.GetChild(i).gameObject);
+                GameObject nextTool = toolsCollection.transform.GetChild(i).gameObject;
+                tools.Add(nextTool);
+                if(!nextTool.CompareTag("Hand"))
+                {
+                    nextTool.SetActive(false);
+                }
+                
                 Debug.Log("Tool hinzugefügt: " + toolsCollection.transform.GetChild(i).gameObject);
             }
         }

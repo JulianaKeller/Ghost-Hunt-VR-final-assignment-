@@ -1,26 +1,21 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.XR.Interaction.Toolkit;
 using Unity.Netcode;
 
-public class SpawnCaptureBall : MonoBehaviour
+public class SpawnCaptureBall : NetworkBehaviour
 {
     public GameObject captureBallPrefab;
 
     private GameObject currentCaptureBall;
     public Transform spawnPoint;
 
-    // Start is called before the first frame update
-    void Start()
+    public override void OnNetworkSpawn()
     {
-        SpawnNewBall();
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-
+        if (IsServer) // Ensure only the server spawns the ball
+        {
+            SpawnNewBall();
+        }
     }
 
     void SpawnNewBall()
@@ -36,14 +31,16 @@ public class SpawnCaptureBall : MonoBehaviour
             if (followScript != null)
             {
                 // Pass the instance's spawnPoint to the capture ball
-                followScript.SetFollowTarget(spawnPoint);
+                followScript.AttachBall(spawnPoint);
+                followScript.SetSpawner(this);
             }
         }
     }
 
-    void OnBallGrabbed(SelectExitEventArgs args)
+    // Called when the ball is picked up
+    public void OnBallPickedUp()
     {
         currentCaptureBall = null;
-        Invoke("SpawnNewBall", 1f); // Delay before spawning a new ball
+        Invoke(nameof(SpawnNewBall), 1f); // Spawn a new ball after a delay
     }
 }

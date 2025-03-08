@@ -14,10 +14,10 @@ public class GhostFadeEffects : NetworkBehaviour
     public float maxInvisibleDuration = 30f;
 
     [Header("Particle Fading Settings")]
-    public float particleFadeDelayIn = 0.5f; // Delay before particles fade in
-    public float particleFadeDelayOut = 0f; // Delay before particles fade out
-    public float maxParticleEmissionRate = 100f; // Max emission rate of particles when fully visible
-    public float minParticleEmissionRate = 0f; // Min emission rate of particles when fully invisible
+    public float particleFadeDelayIn = 0.5f;
+    public float particleFadeDelayOut = 0f;
+    public float maxParticleEmissionRate = 100f;
+    public float minParticleEmissionRate = 0f;
 
     //References
     public Renderer ghostRenderer;
@@ -33,8 +33,10 @@ public class GhostFadeEffects : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
+        minVisibleDuration = NetworkVariableManager.Instance.GetDifficultyProperties().GhostMinVisibilityDuration;
+
         ghostRenderer = GetComponentInChildren<SkinnedMeshRenderer>();
-        ghostParticles = GetComponentInChildren<ParticleSystem>(); // Find the particle system
+        ghostParticles = GetComponentInChildren<ParticleSystem>();
         particleEmission = ghostParticles.emission;
         geistBewegung = GetComponent<GeistBewegung>();
 
@@ -47,14 +49,10 @@ public class GhostFadeEffects : NetworkBehaviour
         if (IsServer)
         {
             // Start fading logic only on the server:
-
             // Start periodically fading and reappearing on the server
-            //ToDo: Only if not stunned or paralized
-            if(!geistBewegung.IsStunned() && !geistBewegung.IsParalyzed())
-            {
-                InitializeFadeList();
-                StartFading();
-            }
+            
+            InitializeFadeList();
+            StartFading();
         }
     }
 
@@ -64,12 +62,11 @@ public class GhostFadeEffects : NetworkBehaviour
         {
             foreach (Material mat in ghostRenderer.materials)
             {
-                fadeAlphas.Add(1f); // Default to fully visible
+                fadeAlphas.Add(1f);
             }
         }
     }
 
-    // Start is called before the first frame update
     void Start()
     {
         ghostRenderer = GetComponentInChildren<SkinnedMeshRenderer>();
@@ -78,12 +75,30 @@ public class GhostFadeEffects : NetworkBehaviour
         geistBewegung = GetComponent<GeistBewegung>();
     }
 
-    // Update is called once per frame
     void Update()
     {
-        // All Clients apply the fadeAlpha/emission rate network value to ensure synchronization
-        ApplyFade();
-        ApplyParticleFade(particleEmissionRate.Value);
+        // If the ghost is not stunned or paralyzed, start or restart fading:
+        if (!geistBewegung.IsStunned() && !geistBewegung.IsParalyzed())
+        {
+            if (fadeCoroutine == null) // Ensure the routine is not already running
+            {
+                fadeCoroutine = StartCoroutine(FadeInOutRoutine());
+            }
+            // All Clients apply the fadeAlpha/emission rate network value to ensure synchronization
+            ApplyFade();
+            ApplyParticleFade(particleEmissionRate.Value);
+        }
+        else
+        {
+            // If the ghost is stunned or paralyzed, stop the fading routine
+            if (fadeCoroutine != null)
+            {
+                StopCoroutine(fadeCoroutine);
+                fadeCoroutine = null; // Reset the coroutine reference
+            }
+            ResetAlphaToDefault();
+            SetParticleEmission(0f);
+        }
     }
 
     #region Fading methods
@@ -103,31 +118,33 @@ public class GhostFadeEffects : NetworkBehaviour
         //Debug.Log("Starting FadeInOutRoutine...");
         while (true)
         {
-            float fadeDuration = Random.Range(minFadeDuration, maxFadeDuration);
+                minVisibleDuration = NetworkVariableManager.Instance.GetDifficultyProperties().GhostMinVisibilityDuration;
 
-            // Fade out ghost
-            Debug.Log("Fading ghost...");
-            yield return FadeTo(0f, fadeDuration);
-            // Delay for particle system fade out
-            yield return new WaitForSeconds(particleFadeDelayOut);
-            // Fade out particle system
-            Debug.Log("Fading particles...");
-            yield return FadeParticlesTo(minParticleEmissionRate, fadeDuration);
+                float fadeDuration = Random.Range(minFadeDuration, maxFadeDuration);
 
-            //Stay invisible
-            yield return new WaitForSeconds(Random.Range(minInvisibleDuration, maxInvisibleDuration));
+                // Fade out ghost
+                //Debug.Log("Fading ghost...");
+                yield return FadeTo(0f, fadeDuration);
+                // Delay for particle system fade out
+                yield return new WaitForSeconds(particleFadeDelayOut);
+                // Fade out particle system
+                //Debug.Log("Fading particles...");
+                yield return FadeParticlesTo(minParticleEmissionRate, fadeDuration);
 
-            // Fade in particle system
-            Debug.Log("Particles reapearing...");
-            yield return FadeParticlesTo(maxParticleEmissionRate, fadeDuration);
-            // Delay for ghost to fade in
-            yield return new WaitForSeconds(particleFadeDelayIn);
-            // Fade in ghost
-            Debug.Log("Ghost reapearing...");
-            yield return FadeTo(1f, fadeDuration);
+                //Stay invisible
+                yield return new WaitForSeconds(Random.Range(minInvisibleDuration, maxInvisibleDuration));
 
-            //Stay visible
-            yield return new WaitForSeconds(Random.Range(minVisibleDuration, maxVisibleDuration));
+                // Fade in particle system
+                //Debug.Log("Particles reapearing...");
+                yield return FadeParticlesTo(maxParticleEmissionRate, fadeDuration);
+                // Delay for ghost to fade in
+                yield return new WaitForSeconds(particleFadeDelayIn);
+                // Fade in ghost
+                //Debug.Log("Ghost reapearing...");
+                yield return FadeTo(1f, fadeDuration);
+
+                //Stay visible
+                yield return new WaitForSeconds(Random.Range(minVisibleDuration, maxVisibleDuration));
         }
     }
 
@@ -213,6 +230,31 @@ public class GhostFadeEffects : NetworkBehaviour
         // Apply the synchronized emission rate to the particle system
         particleEmission.rateOverTime = targetRate;
         //Debug.Log("Client: Applying particle emission rate to " + particleEmissionRate.Value);
+    }
+
+    private void ResetAlphaToDefault()
+    {
+        if (ghostRenderer != null)
+        {
+            Material[] materials = ghostRenderer.materials;
+
+            for (int i = 0; i < materials.Length; i++)
+            {
+                Color color = materials[i].color;
+                materials[i].color = new Color(color.r, color.g, color.b, 1f);  // Set alpha to 1 (fully visible)
+                fadeAlphas[i] = 1f;  // Sync the network list with the new alpha
+            }
+        }
+    }
+
+    private void SetParticleEmission(float rate)
+    {
+        if (ghostParticles != null)
+        {
+            var emission = ghostParticles.emission;
+            emission.rateOverTime = rate; 
+            particleEmissionRate.Value = rate;
+        }
     }
 
     #endregion

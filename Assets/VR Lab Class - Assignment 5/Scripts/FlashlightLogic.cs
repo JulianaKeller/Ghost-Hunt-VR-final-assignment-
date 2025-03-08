@@ -7,29 +7,30 @@ using Unity.Netcode;
 public class FlashlightLogic : NetworkBehaviour
 {
     [Header("Flashlight Settings")]
-    public float flashRange = 100f;        // Maximum distance the flash can reach
-    public float flashDuration = 0.2f;    // Duration of the flash effect
-    public float paralysisDuration = 3f;  // How long ghosts stay paralyzed
+    public float flashRange = 100f;
+    public float flashDuration = 0.2f;
+    public float paralysisDuration = 3f;
     public float cooldownDuration = 1f;
 
     [Header("VR Input")]
-    public InputActionProperty triggerAction; // Assign this to the Quest 2 trigger button
+    public InputActionProperty triggerAction;
 
     [Header("References")]
-    public Light flashlightLight; // Assign the flashlight's Light component
-    public LayerMask ghostLayer;   // Ensure this is set to the "Ghosts" layer in the Inspector
+    public Light flashlightLight;
+    public LayerMask ghostLayer;
 
-    private bool canFlash = true; // Cooldown to prevent spamming
+    private bool canFlash = true;
 
-    // Start is called before the first frame update
-    void Start()
+    public override void OnNetworkSpawn()
     {
-        
+        paralysisDuration = NetworkVariableManager.Instance.GetDifficultyProperties().ParalyzeDuration;
+        cooldownDuration = NetworkVariableManager.Instance.GetDifficultyProperties().FlashlightCooldownDuration;
     }
 
-    // Update is called once per frame
     void Update()
     {
+        if (!IsOwner) return; // Ensure only the local player triggers flash
+
         if (triggerAction.action.WasPressedThisFrame() && canFlash)
         {
             StartCoroutine(Flash());
@@ -38,11 +39,15 @@ public class FlashlightLogic : NetworkBehaviour
 
     private IEnumerator Flash()
     {
+        //Make sure variables are up to date
+        paralysisDuration = NetworkVariableManager.Instance.GetDifficultyProperties().ParalyzeDuration;
+        cooldownDuration = NetworkVariableManager.Instance.GetDifficultyProperties().FlashlightCooldownDuration;
+
         canFlash = false;
 
         // Enable the flashlight effect
-        flashlightLight.enabled = true;
-        Debug.Log("Flash on.");
+        FlashLightEffectClientRpc(true);
+        //Debug.Log("Flash on.");
 
         // Raycast in front of the flashlight to detect ghosts
         if (Physics.Raycast(transform.position, transform.up, out RaycastHit hit, flashRange, ghostLayer))
@@ -60,11 +65,17 @@ public class FlashlightLogic : NetworkBehaviour
 
         // Flash duration before turning off
         yield return new WaitForSeconds(flashDuration);
-        flashlightLight.enabled = false;
-        Debug.Log("Flash off.");
+        FlashLightEffectClientRpc(false);
+        //Debug.Log("Flash off.");
 
-        // Small cooldown before allowing another flash
+        // Cooldown before allowing another flash
         yield return new WaitForSeconds(cooldownDuration);
         canFlash = true;
+    }
+
+    [ClientRpc]
+    private void FlashLightEffectClientRpc(bool state)
+    {
+        flashlightLight.enabled = state;
     }
 }

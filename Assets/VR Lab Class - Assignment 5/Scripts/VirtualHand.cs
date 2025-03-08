@@ -2,7 +2,7 @@ using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-public class VirtualHand : MonoBehaviour
+public class VirtualHand : NetworkBehaviour
 {
     #region Member Variables
 
@@ -39,7 +39,7 @@ public class VirtualHand : MonoBehaviour
 
     #region MonoBehaviour Callbacks
 
-    private void Start()
+    public override void OnNetworkSpawn()
     {
         if (!GetComponentInParent<NetworkObject>().IsOwner)
         {
@@ -68,6 +68,14 @@ public class VirtualHand : MonoBehaviour
                 grabbedRb = grabbedObject.GetComponent<Rigidbody>();
                 Debug.Log("Grabbed " + grabbedObject);
 
+                if (grabbedObject.TryGetComponent(out NetworkObject netObj))
+                {
+                    if (!netObj.IsOwner)
+                    {
+                        netObj.ChangeOwnership(NetworkManager.Singleton.LocalClientId);
+                    }
+                }
+
                 // Attempt to get the follow script component.
                 CaptureBallFollowMode followScript = grabbedObject.GetComponent<CaptureBallFollowMode>();
                 if (followScript != null)
@@ -85,6 +93,8 @@ public class VirtualHand : MonoBehaviour
                 else
                 {
                     Debug.Log("No Rigidbody found!");
+                    grabbedObject = null;
+                    return;
                 }
                 offsetMatrix = GetTransformationMatrix(transform, true).inverse *
                                GetTransformationMatrix(grabbedObject.transform, true);
@@ -100,19 +110,25 @@ public class VirtualHand : MonoBehaviour
                 grabbedObject.transform.rotation = newTransform.rotation;
             }
         }
-        else if (grabAction.action.WasReleasedThisFrame()) //inherit velocity here?
+        else if (grabAction.action.WasReleasedThisFrame()) //inherit velocity here
         {
             Debug.Log("GrabbedAction was released...");
             if(grabbedObject != null)
             {
-                grabbedRb.isKinematic = false; // Enable physics again
-                grabbedRb.useGravity = true;
-                grabbedRb.velocity = handRigidbody.velocity; // Inherit velocity
-                grabbedRb.angularVelocity = handRigidbody.angularVelocity;
-                Debug.Log("Reenabled physics for " + grabbedObject);
-                Debug.Log("Objects Velocity: " + grabbedRb.velocity);
+                if (grabbedRb != null)
+                {
+                    grabbedRb.isKinematic = false; // Enable physics again
+                    grabbedRb.useGravity = true;
 
-                grabbedObject.GetComponent<CaptureBallLogic>().Throw();
+                    if (IsOwner) // Only the server should apply physics updates
+                    {
+                        grabbedObject.GetComponent<CaptureBallLogic>().Throw();
+                        ThrowObjectServerRpc(grabbedObject.GetComponent<NetworkObject>(), handRigidbody.velocity, handRigidbody.angularVelocity);
+                    }
+
+                    Debug.Log("Reenabled physics for " + grabbedObject);
+                    Debug.Log("Objects Velocity: " + grabbedRb.velocity);
+                }
             }
             else
             {
@@ -137,6 +153,24 @@ public class VirtualHand : MonoBehaviour
         else
         {
             return Matrix4x4.TRS(t.localPosition, t.localRotation, t.localScale);
+        }
+    }
+
+    #endregion
+
+    #region Server Networking
+
+    [ServerRpc(RequireOwnership = false)]
+    private void ThrowObjectServerRpc(NetworkObjectReference objectRef, Vector3 velocity, Vector3 angularVelocity)
+    {
+        if (objectRef.TryGet(out NetworkObject obj))
+        {
+            Rigidbody rb = obj.GetComponent<Rigidbody>();
+            if (rb != null)
+            {
+                rb.velocity = velocity;
+                rb.angularVelocity = angularVelocity;
+            }
         }
     }
 

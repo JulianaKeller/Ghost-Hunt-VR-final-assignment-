@@ -7,17 +7,17 @@ public class GeistBewegung : NetworkBehaviour
 {
     [Header("Animation and Movement Settings")]
     public float animationSpeed = 1.0f;
-    public float movementSpeedMultiplier = 1.0f; // Bewegungsgeschwindigkeit
+    public float movementSpeedMultiplier = 1.0f;
 
     [Header("Rotation Settings")]
-    public float minRotationAngleBoundary = 90f; // Maximale Rotationswinkel
+    public float minRotationAngleBoundary = 90f;
     public float maxRotationAngleBoundary = 270f;
-    public float maxRotationAngleRandomRotation = 90f; // Maximale Rotationswinkel
-    public float rotationChanceIncreaseRate = 0.1f; // Erhöhungsrate der Rotationswahrscheinlichkeit
+    public float maxRotationAngleRandomRotation = 90f;
+    public float rotationChanceIncreaseRate = 0.1f;
 
     [Header("References")]
-    public LayerMask Boundary; // Layer für Begrenzungsobjekte
-    public LayerMask Ghosts; // Layer für Begrenzungsobjekte
+    public LayerMask Boundary;
+    public LayerMask Ghosts;
     [SerializeField] private Material ghostMaterial;
 
     //Rotation values
@@ -37,11 +37,10 @@ public class GeistBewegung : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
-        //Debug.Log("Entering onNetworkSpawn...");
+        movementSpeedMultiplier = NetworkVariableManager.Instance.GetDifficultyProperties().GhostWalkingSpeed;
+
         if (IsServer)
         {
-            // Start ghost movement only on the server:
-
             //Randomly change walking animation
             InvokeRepeating(nameof(UpdateWalkingAnimation), 2f, 2f); // Alle 2 Sekunden checken
         }
@@ -79,7 +78,7 @@ public class GeistBewegung : NetworkBehaviour
 
         animator.speed = animationSpeed;
 
-        // Al Clients apply the network variable values for the animator variables
+        // All Clients should apply the network variable values for the animator variables
         animator.SetBool("isStunned", isStunned.Value);
         animator.SetBool("isParalyzed", isParalyzed.Value);
         animator.SetFloat("walkingV1Chance", walkingV1Chance.Value);
@@ -96,11 +95,18 @@ public class GeistBewegung : NetworkBehaviour
 
     void MoveForward()
     {
+        movementSpeedMultiplier = NetworkVariableManager.Instance.GetDifficultyProperties().GhostWalkingSpeed;
+
         //Fix random rotation problems where the ghost rotates not around the y axsis for no apparent reason :(
         transform.rotation = Quaternion.Euler(0, transform.rotation.eulerAngles.y, 0);
 
         Vector3 forwardDirection = Vector3.forward;
         transform.Translate(new Vector3(forwardDirection.x, 0, forwardDirection.z) * movementSpeedMultiplier * Time.deltaTime);
+    }
+
+    public void Capture()
+    {
+
     }
 
     #region Rotation methods
@@ -168,8 +174,10 @@ public class GeistBewegung : NetworkBehaviour
     private IEnumerator Paralyze(float duration) //Flashlight
     {
         isParalyzed.Value = true;
+        animator.SetBool("isParalyzed", true);  // Ensures this change is reflected across all clients
         yield return new WaitForSeconds(duration);
         isParalyzed.Value = false;
+        animator.SetBool("isParalyzed", false);
     }
 
     [ServerRpc(RequireOwnership = false)]

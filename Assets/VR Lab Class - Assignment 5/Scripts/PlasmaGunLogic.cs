@@ -5,21 +5,19 @@ using UnityEngine.InputSystem;
 using Unity.Netcode;
 using UnityEngine.XR.Interaction.Toolkit;
 
-public class PlasmaGunLogic : MonoBehaviour
+public class PlasmaGunLogic : NetworkBehaviour
 {
     [Header("Plasma Gun Settings")]
     
-    public float laserRange = 10f;        // Maximum distance the flash can reach
-    public float maxDuration = 10f;    // Duration of the  effect
+    public float laserRange = 10f;
+    public float maxDuration = 10f;
     public float rechargeTime = 5f;
-    public float paralysisTime = 3f;
-    
 
     [Header("VR Input")]
-    public InputActionProperty triggerAction; // Assign this to the Quest 2 trigger button
+    public InputActionProperty triggerAction;
 
     [Header("References")]
-    public LayerMask ghostLayer;   // Ensure this is set to the "Ghosts" layer in the Inspector
+    public LayerMask ghostLayer;
     public LineRenderer laserLine;
     public LineRenderer plasmaLine;
 
@@ -27,22 +25,29 @@ public class PlasmaGunLogic : MonoBehaviour
     private bool isRecharging = false;
     private Transform targetGhost = null;
 
-    // Start is called before the first frame update
-    void Start()
+    // Network Variables to sync laser line positions
+    private NetworkVariable<Vector3> laserStartPos = new NetworkVariable<Vector3>();
+    private NetworkVariable<Vector3> laserEndPos = new NetworkVariable<Vector3>();
+    private NetworkVariable<bool> laserEnabled = new NetworkVariable<bool>(false);
+    private NetworkVariable<bool> plasmaEnabled = new NetworkVariable<bool>(false);
+
+    public override void OnNetworkSpawn()
     {
-        
+        maxDuration = NetworkVariableManager.Instance.GetDifficultyProperties().StunDuration;
+        rechargeTime = NetworkVariableManager.Instance.GetDifficultyProperties().LaserRechargeDuration;
     }
 
-    // Update is called once per frame
     void Update()
     {
         if (isRecharging) return;
 
-        if (triggerAction.action.IsPressed()) // Trigger gedrückt
+        if (!isFiring && triggerAction.action.IsPressed())
         {
+            maxDuration = NetworkVariableManager.Instance.GetDifficultyProperties().StunDuration;
+            rechargeTime = NetworkVariableManager.Instance.GetDifficultyProperties().LaserRechargeDuration;
             StartFiring();
         }
-        else if (triggerAction.action.WasReleasedThisFrame()) // Trigger losgelassen
+        else if (triggerAction.action.WasReleasedThisFrame())
         {
             StopFiring();
         }
@@ -51,6 +56,13 @@ public class PlasmaGunLogic : MonoBehaviour
         {
             UpdateLaser();
         }
+
+        // Sync the laser positions across clients
+        if (IsServer)
+        {
+            laserStartPos.Value = laserLine.GetPosition(0);
+            laserEndPos.Value = laserLine.GetPosition(1);
+        }
     }
 
     void StartFiring()
@@ -58,6 +70,13 @@ public class PlasmaGunLogic : MonoBehaviour
         isFiring = true;
         laserLine.enabled = true;
         plasmaLine.enabled = false;
+
+        if (IsServer)
+        {
+            laserEnabled.Value = true;
+            plasmaEnabled.Value = false;
+            SyncLaserStateClientRpc(laserEnabled.Value, plasmaEnabled.Value);
+        }
     }
 
     void StopFiring()
@@ -65,6 +84,13 @@ public class PlasmaGunLogic : MonoBehaviour
         isFiring = false;
         laserLine.enabled = false;
         plasmaLine.enabled = false;
+
+        if (IsServer)
+        {
+            laserEnabled.Value = false;
+            plasmaEnabled.Value = false;
+            SyncLaserStateClientRpc(laserEnabled.Value, plasmaEnabled.Value);
+        }
 
         if (targetGhost)
         {
@@ -82,7 +108,7 @@ public class PlasmaGunLogic : MonoBehaviour
         laserLine.SetPosition(0, laserStart);
         plasmaLine.SetPosition(0, laserStart);
 
-        if (Physics.Raycast(laserStart, laserDirection, out hit, laserRange, LayerMask.GetMask("Ghosts")))
+        if (Physics.Raycast(laserStart, laserDirection, out hit, laserRange, ghostLayer))
         {
             laserLine.SetPosition(1, hit.point);
             plasmaLine.SetPosition(1, hit.point);
@@ -90,6 +116,13 @@ public class PlasmaGunLogic : MonoBehaviour
             // Plasma Linie aktivieren, normalen Laser ausblenden
             laserLine.enabled = false;
             plasmaLine.enabled = true;
+
+            if (IsServer)
+            {
+                laserEnabled.Value = false;
+                plasmaEnabled.Value = true;
+                SyncLaserStateClientRpc(laserEnabled.Value, plasmaEnabled.Value);
+            }
 
             if (targetGhost == null)
             {
@@ -100,15 +133,28 @@ public class PlasmaGunLogic : MonoBehaviour
         }
         else
         {
+            if (targetGhost)
+            {
+                targetGhost.GetComponent<GeistBewegung>().UnstunLaserServerRpc();
+                targetGhost = null;
+            }
             laserLine.enabled = true;
             plasmaLine.enabled = false;
+
+            if (IsServer)
+            {
+                laserEnabled.Value = true;
+                plasmaEnabled.Value = false;
+                SyncLaserStateClientRpc(laserEnabled.Value, plasmaEnabled.Value);
+            }
+
             laserLine.SetPosition(1, laserStart + laserDirection * laserRange);
         }
     }
 
     IEnumerator LaserDuration()
     {
-        yield return new WaitForSeconds(paralysisTime);
+        yield return new WaitForSeconds(maxDuration);
         StopFiring();
         StartCoroutine(RechargeLaser());
     }
@@ -118,5 +164,23 @@ public class PlasmaGunLogic : MonoBehaviour
         isRecharging = true;
         yield return new WaitForSeconds(rechargeTime);
         isRecharging = false;
+    }
+
+    // will be called when any of the laser positions change
+    [ClientRpc]
+    private void SyncLaserLineClientRpc(Vector3 start, Vector3 end)
+    {
+        laserLine.SetPosition(0, start);
+        laserLine.SetPosition(1, end);
+        plasmaLine.SetPosition(0, start);
+        plasmaLine.SetPosition(1, end);
+    }
+
+    // Sync laser on/off state across clients
+    [ClientRpc]
+    private void SyncLaserStateClientRpc(bool laserActive, bool plasmaActive)
+    {
+        laserLine.enabled = laserActive;
+        plasmaLine.enabled = plasmaActive;
     }
 }

@@ -2,7 +2,6 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Unity.Netcode;
-using UnityEngine.XR.Interaction.Toolkit;
 
 public class CaptureBallLogic : NetworkBehaviour
 {
@@ -13,33 +12,20 @@ public class CaptureBallLogic : NetworkBehaviour
     private bool hasBeenThrown = false;
     private bool hasCaptured = false;
 
-    // Start is called before the first frame update
-    void Start()
+    private SpawnGhosts GhostSpawner;
+
+    public override void OnNetworkSpawn()
     {
         rb = GetComponent<Rigidbody>();
+        GhostSpawner = FindObjectOfType<SpawnGhosts>();
+        if(GhostSpawner == null)
+        {
+            Debug.Log("No GhostSpawner found!");
+        }
 
         // Make sure gravity is disabled when the ball spawns
         rb.useGravity = false;
         rb.isKinematic = true;
-
-        // Add event listeners for grabbing and releasing
-        //grabInteractable.selectEntered.AddListener(OnGrab);
-        //grabInteractable.selectExited.AddListener(OnRelease);
-    }
-
-    void OnGrab(SelectEnterEventArgs args) //not needed, this is done in VirtualHand script
-    {
-        // Ball is being held, disable physics to avoid weird interactions
-        rb.isKinematic = true;
-        rb.useGravity = false;
-    }
-
-    void OnRelease(SelectExitEventArgs args) //not needed, this is done in VirtualHand script
-    {
-        // Ball is thrown, enable gravity and physics
-        rb.isKinematic = false;
-        rb.useGravity = true;
-        hasBeenThrown = true;
     }
 
     public void Throw()
@@ -69,6 +55,8 @@ public class CaptureBallLogic : NetworkBehaviour
 
         hasCaptured = true;
 
+        NetworkVariableManager.Instance.IncrementCaughtGhosts();
+
         // Stop ball movement and make it hover
         rb.velocity = Vector3.zero;
         rb.angularVelocity = Vector3.zero;
@@ -76,15 +64,23 @@ public class CaptureBallLogic : NetworkBehaviour
         rb.useGravity = false;
 
         //Call Capture on ghost
-        //ToDo
+        GeistBewegung geistScript = ghost.GetComponent<GeistBewegung>();
+        if (geistScript != null)
+        {
+            geistScript.Capture();
+        }
 
-        // Destroy the ball after a delay
-        Destroy(gameObject, hoverTimeAfterHit);
+        // Destroy the ball after a delay of hoverTimeAfterHit
+        if (IsServer)
+        {
+            StartCoroutine(DespawnGhostAfterDelay(ghost));
+        }
     }
 
-    // Update is called once per frame
-    void Update()
+    IEnumerator DespawnGhostAfterDelay(GameObject ghost)
     {
-        
+        yield return new WaitForSeconds(hoverTimeAfterHit);
+
+        GhostSpawner.DespawnGhost(ghost);
     }
 }

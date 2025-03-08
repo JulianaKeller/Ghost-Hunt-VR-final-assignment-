@@ -24,7 +24,7 @@ public class SkyboxController : MonoBehaviour
 
         exposure = Exposure(currentTime);
 
-        Debug.Log("Exposure: " + exposure);
+        //Debug.Log("Exposure: " + exposure);
 
         //Apply exposure to skybox
         skyboxMat.SetFloat("_Exposure", exposure);
@@ -40,7 +40,7 @@ public class SkyboxController : MonoBehaviour
         float exponent = Mathf.Log(endExposure / startExposure, 10)/ NetworkVariableManager.Instance.GetGameTimeLimit();
         float b = Mathf.Pow(10, exponent);
 
-        Debug.Log("New exposure value: " + (a * Mathf.Pow(b, t)));
+        //Debug.Log("New exposure value: " + (a * Mathf.Pow(b, t)));
 
         return (a * Mathf.Pow(b, t));
     }

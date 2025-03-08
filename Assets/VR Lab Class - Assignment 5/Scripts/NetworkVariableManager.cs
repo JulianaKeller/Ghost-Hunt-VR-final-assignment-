@@ -12,7 +12,7 @@ public class NetworkVariableManager : NetworkBehaviour
     public NetworkVariable<int> CaughtGhostsCount = new NetworkVariable<int>(0);
     public NetworkVariable<int> GameTime = new NetworkVariable<int>(0);
     public NetworkVariable<int> GameTimeLimit = new NetworkVariable<int>(300); // Default to 5 minutes
-    public NetworkVariable<int> GameDifficulty = new NetworkVariable<int>(1); // 1 = Easy, 2 = Medium, 3 = Hard
+    public NetworkVariable<int> GameDifficulty = new NetworkVariable<int>(2); // 1 = Easy, 2 = Medium, 3 = Hard
 
     // Variables affected by difficulty
     public NetworkVariable<int> SpawnGhostsCount = new NetworkVariable<int>(4);
@@ -114,6 +114,7 @@ public class NetworkVariableManager : NetworkBehaviour
         if (IsServer)
         {
             GameDifficulty.Value = newDifficulty;
+            UpdateGameDifficulty(newDifficulty);
             Debug.Log("Game difficulty set to " + newDifficulty);
         }
         else
@@ -126,6 +127,7 @@ public class NetworkVariableManager : NetworkBehaviour
     private void SetGameDifficultyServerRpc(int newDifficulty)
     {
         GameDifficulty.Value = newDifficulty;
+        UpdateGameDifficulty(newDifficulty);
         Debug.Log("Game difficulty updated by server to " + newDifficulty);
     }
 
@@ -174,8 +176,8 @@ public class NetworkVariableManager : NetworkBehaviour
     }
 
     // Gets all difficulty properties
-    public (int SpawnGhostsCount, float ghostVisibility, float paralyze, float stun, float ghostSpeed,
-            float laserRecharge, float flashlightCooldown, float vacuumDuration) GetDifficultyProperties()
+    public (int SpawnGhostsCount, float GhostMinVisibilityDuration, float ParalyzeDuration, float StunDuration, float GhostWalkingSpeed,
+            float LaserRechargeDuration, float FlashlightCooldownDuration, float VacuumDuration) GetDifficultyProperties()
     {
         return (SpawnGhostsCount.Value, GhostMinVisibilityDuration.Value, ParalyzeDuration.Value,
                 StunDuration.Value, GhostWalkingSpeed.Value, LaserRechargeDuration.Value,

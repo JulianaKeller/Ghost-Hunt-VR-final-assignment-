@@ -5,7 +5,7 @@ using Unity.Netcode;
 
 public class GameTimeManager : NetworkBehaviour
 {
-    private void Start()
+    public override void OnNetworkSpawn()
     {
         // Only the server will handle the game time updates
         if (IsServer)

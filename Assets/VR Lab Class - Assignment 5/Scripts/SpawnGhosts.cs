@@ -14,9 +14,10 @@ public class SpawnGhosts : NetworkBehaviour
     private List<GameObject> activeGhosts = new List<GameObject>();
     private Transform[] spawnPoints;
 
-    // Start is called before the first frame update
-    void Start()
+    public override void OnNetworkSpawn()
     {
+        Debug.Log("OnNetworkSpawn called. IsServer: " + IsServer);
+
         minGhostCount = NetworkVariableManager.Instance.GetDifficultyProperties().SpawnGhostsCount;
 
         if (spawnPointsParent != null)
@@ -27,7 +28,12 @@ public class SpawnGhosts : NetworkBehaviour
 
         if (IsServer) // Ensure this only runs on the server
         {
+            Debug.Log("IsServer and starting SpawnRoutine now...");
             StartCoroutine(SpawnRoutine());
+        }
+        else
+        {
+            Debug.Log("Is not server, can't start SpawnRoutine!");
         }
     }
 
@@ -55,11 +61,19 @@ public class SpawnGhosts : NetworkBehaviour
         }
         else if(activeGhosts.Count > minGhostCount)
         {
-            NetworkObject netObj = activeGhosts[activeGhosts.Count - 1].GetComponent<NetworkObject>();
+            DespawnGhost(activeGhosts[activeGhosts.Count - 1]);
+        }
+    }
+
+    public void DespawnGhost(GameObject obj)
+    {
+        if (IsServer)
+        {
+            NetworkObject netObj = obj.GetComponent<NetworkObject>();
             if (netObj.IsSpawned && netObj.IsOwner)
             {
                 netObj.Despawn(true);
-                activeGhosts.RemoveAt(activeGhosts.Count - 1);
+                activeGhosts.Remove(obj);
             }
         }
     }

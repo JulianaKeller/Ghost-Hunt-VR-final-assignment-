@@ -1,7 +1,7 @@
 using Unity.Netcode;
 using UnityEngine;
 
-public class HandCollider : MonoBehaviour
+public class HandCollider : NetworkBehaviour
 {
     #region Member Variables
 
@@ -12,7 +12,7 @@ public class HandCollider : MonoBehaviour
 
     #region MonoBehaviour Callbacks
 
-    private void Start()
+    public override void OnNetworkSpawn()
     {
         if (!GetComponentInParent<NetworkObject>().IsOwner)
         {

@@ -6,21 +6,20 @@ using Unity.Netcode;
 public class GhostSounds : NetworkBehaviour
 {
     [Header("Audio Settings")]
-    public AudioSource ghostSoundAudioSource; // The AudioSource that plays the sound
-    public List<AudioClip> ghostSoundClips; // List of AudioClips for the ghost sounds
-    public float maxVolume = 1.0f; // Max volume of the ghost sound
-    public float minVolume = 0.0f; // Min volume (when the player is far away)
-    public float minPauseDuration = 1.0f; // Minimum duration to pause between clips
-    public float maxPauseDuration = 5.0f; // Maximum duration to pause between clips
+    public AudioSource ghostSoundAudioSource;
+    public List<AudioClip> ghostSoundClips;
+    public float maxVolume = 1.0f;
+    public float minVolume = 0.0f;
+    public float minPauseDuration = 1.0f;
+    public float maxPauseDuration = 5.0f;
 
     private Transform vrPlayerTransform;
 
-    // Start is called before the first frame update
     void Start()
     {
         if (ghostSoundAudioSource != null && ghostSoundClips.Count > 0)
         {
-            ghostSoundAudioSource.loop = false; // Don't loop the audio, we control it manually
+            ghostSoundAudioSource.loop = false; // Make sure to not loop the audio
             StartCoroutine(PlayRandomGhostSound());
         }
 

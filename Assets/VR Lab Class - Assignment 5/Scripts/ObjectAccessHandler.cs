@@ -12,7 +12,9 @@ public class ObjectAccessHandler : NetworkBehaviour
 
     public bool RequestAccess()
     {
-        if(gameObject.tag == "Hand"){
+        if (IsServer) return false; // Prevent server from making the request because LocalClientId only applies to clients
+
+        if (gameObject.tag == "Hand"){
             return true;
         }
         //check if the object is already grabbed, if yes return false

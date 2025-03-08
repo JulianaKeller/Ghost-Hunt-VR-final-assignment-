@@ -15,7 +15,7 @@ public class NetworkVariableManager : NetworkBehaviour
     public NetworkVariable<int> GameDifficulty = new NetworkVariable<int>(1); // 1 = Easy, 2 = Medium, 3 = Hard
 
     // Variables affected by difficulty
-    public NetworkVariable<int> SpawnedGhostsCount = new NetworkVariable<int>(4);
+    public NetworkVariable<int> SpawnGhostsCount = new NetworkVariable<int>(4);
     public NetworkVariable<float> GhostMinVisibilityDuration = new NetworkVariable<float>(5f);
     public NetworkVariable<float> ParalyzeDuration = new NetworkVariable<float>(8f);
     public NetworkVariable<float> StunDuration = new NetworkVariable<float>(8f);
@@ -55,7 +55,7 @@ public class NetworkVariableManager : NetworkBehaviour
         switch (difficulty)
         {
             case 1: // Easy
-                SpawnedGhostsCount.Value = 6;
+                SpawnGhostsCount.Value = 6;
                 GhostMinVisibilityDuration.Value = 30f;
                 ParalyzeDuration.Value = 10f;
                 StunDuration.Value = 10f;
@@ -67,7 +67,7 @@ public class NetworkVariableManager : NetworkBehaviour
                 break;
 
             case 2: // Medium
-                SpawnedGhostsCount.Value = 4;
+                SpawnGhostsCount.Value = 4;
                 GhostMinVisibilityDuration.Value = 15f;
                 ParalyzeDuration.Value = 8f;
                 StunDuration.Value = 8f;
@@ -79,7 +79,7 @@ public class NetworkVariableManager : NetworkBehaviour
                 break;
 
             case 3: // Hard
-                SpawnedGhostsCount.Value = 1;
+                SpawnGhostsCount.Value = 1;
                 GhostMinVisibilityDuration.Value = 5f;
                 ParalyzeDuration.Value = 3f;
                 StunDuration.Value = 3f;
@@ -174,10 +174,10 @@ public class NetworkVariableManager : NetworkBehaviour
     }
 
     // Gets all difficulty properties
-    public (int spawnedGhosts, float ghostVisibility, float paralyze, float stun, float ghostSpeed,
+    public (int SpawnGhostsCount, float ghostVisibility, float paralyze, float stun, float ghostSpeed,
             float laserRecharge, float flashlightCooldown, float vacuumDuration) GetDifficultyProperties()
     {
-        return (SpawnedGhostsCount.Value, GhostMinVisibilityDuration.Value, ParalyzeDuration.Value,
+        return (SpawnGhostsCount.Value, GhostMinVisibilityDuration.Value, ParalyzeDuration.Value,
                 StunDuration.Value, GhostWalkingSpeed.Value, LaserRechargeDuration.Value,
                 FlashlightCooldownDuration.Value, VacuumDuration.Value);
     }

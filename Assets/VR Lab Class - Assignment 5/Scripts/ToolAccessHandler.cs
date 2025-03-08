@@ -11,6 +11,7 @@ public class ToolAccessHandler : NetworkBehaviour
 
     //private NetworkList<bool> isInUse;
     private Dictionary<int, ulong> toolOwnership = new Dictionary<int, ulong>();
+    private toolsManager _toolsManager;
 
     #endregion
 
@@ -38,6 +39,11 @@ public class ToolAccessHandler : NetworkBehaviour
             }
         }
     }*/
+
+    private void Start()
+    {
+        _toolsManager = FindObjectOfType<toolsManager>();
+    }
 
     #region Custom Methods
 
@@ -102,13 +108,12 @@ public class ToolAccessHandler : NetworkBehaviour
     [ClientRpc]
     private void RequestAccessClientRpc(int toolIndex, bool granted, ulong playerId)
     {
-        if (granted && playerId == NetworkManager.Singleton.LocalClientId)
+        if (playerId == NetworkManager.Singleton.LocalClientId)
         {
-            FindObjectOfType<toolsManager>().OnAccessGranted(toolIndex);
-        }
-        else if (!granted && playerId == NetworkManager.Singleton.LocalClientId)
-        {
-            FindObjectOfType<toolsManager>().OnAccessDenied();
+            if (granted)
+                _toolsManager.OnAccessGranted(toolIndex);
+            else
+                _toolsManager.OnAccessDenied();
         }
     }
 
@@ -116,6 +121,38 @@ public class ToolAccessHandler : NetworkBehaviour
     public void ReleaseServerRpc(int toolIndex, ServerRpcParams rpcParams = default)
     {
         Release(toolIndex, rpcParams.Receive.SenderClientId);
+    }
+
+    private void OnClientDisconnect(ulong clientId)
+    {
+        List<int> toRemove = new List<int>();
+
+        foreach (var kvp in toolOwnership)
+        {
+            if (kvp.Value == clientId)
+                toRemove.Add(kvp.Key);
+        }
+
+        foreach (var key in toRemove)
+        {
+            toolOwnership.Remove(key);
+        }
+    }
+
+    public override void OnNetworkSpawn()
+    {
+        if (IsServer)
+        {
+            NetworkManager.OnClientDisconnectCallback += OnClientDisconnect;
+        }
+    }
+
+    public override void OnNetworkDespawn()
+    {
+        if (IsServer)
+        {
+            NetworkManager.OnClientDisconnectCallback -= OnClientDisconnect;
+        }
     }
 
     #endregion

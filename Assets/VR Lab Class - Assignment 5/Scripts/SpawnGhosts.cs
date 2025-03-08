@@ -3,12 +3,12 @@ using System.Collections.Generic;
 using UnityEngine;
 using Unity.Netcode;
 
-public class SpawnGhosts : MonoBehaviour
+public class SpawnGhosts : NetworkBehaviour
 {
     public GameObject ghostPrefab;
     public GameObject spawnPointsParent; // Mögliche Spawnpunkte
     [Range(1, 10)]
-    public int minGhostCount = 3; // Mindestanzahl an Geistern in der Szene
+    private int minGhostCount = 3; // Mindestanzahl an Geistern in der Szene
     public float spawnInterval = 5f; // Zeitintervall für Überprüfung/Spawn
 
     private List<GameObject> activeGhosts = new List<GameObject>();
@@ -17,11 +17,18 @@ public class SpawnGhosts : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        minGhostCount = NetworkVariableManager.Instance.GetDifficultyProperties().SpawnGhostsCount;
+
         if (spawnPointsParent != null)
         {
             spawnPoints = spawnPointsParent.GetComponentsInChildren<Transform>();
+            if (spawnPoints.Length > 1) spawnPoints = spawnPoints[1..]; //Filter out parent transform
         }
-        StartCoroutine(SpawnRoutine());
+
+        if (IsServer) // Ensure this only runs on the server
+        {
+            StartCoroutine(SpawnRoutine());
+        }
     }
 
     IEnumerator SpawnRoutine()
@@ -29,17 +36,31 @@ public class SpawnGhosts : MonoBehaviour
         while (true)
         {
             yield return new WaitForSeconds(spawnInterval);
-            CheckAndSpawnGhosts();
+            if (IsServer) // Ensure only the server spawns
+            {
+                CheckAndSpawnGhosts();
+            }
         }
     }
 
     void CheckAndSpawnGhosts()
     {
+        minGhostCount = NetworkVariableManager.Instance.GetDifficultyProperties().SpawnGhostsCount;
+
         activeGhosts.RemoveAll(ghost => ghost == null); // Entferne zerstörte Geister
         
         if (activeGhosts.Count < minGhostCount)
         {
             SpawnGhost();
+        }
+        else if(activeGhosts.Count > minGhostCount)
+        {
+            NetworkObject netObj = activeGhosts[activeGhosts.Count - 1].GetComponent<NetworkObject>();
+            if (netObj.IsSpawned && netObj.IsOwner)
+            {
+                netObj.Despawn(true);
+                activeGhosts.RemoveAt(activeGhosts.Count - 1);
+            }
         }
     }
 
@@ -49,10 +70,15 @@ public class SpawnGhosts : MonoBehaviour
         {
             Transform spawnPoint = spawnPoints[Random.Range(0, spawnPoints.Length)];
             Quaternion randomRotation = Quaternion.Euler(0, Random.Range(0f, 360f), 0);
+
             GameObject newGhost = Instantiate(ghostPrefab, new Vector3(spawnPoint.position.x, -2.5f, spawnPoint.position.z), randomRotation);
-            var instanceNetworkObject = newGhost.GetComponent<NetworkObject>();
-            instanceNetworkObject.Spawn();
-            activeGhosts.Add(newGhost);
+
+            NetworkObject instanceNetworkObject = newGhost.GetComponent<NetworkObject>();
+            if (instanceNetworkObject != null && IsServer) // Ensure this is running only on the server
+            {
+                instanceNetworkObject.Spawn();
+                activeGhosts.Add(newGhost);
+            }
         }
     }
 }

@@ -28,6 +28,13 @@ public class HandCollider : MonoBehaviour
             Debug.Log("Hand Collided with " + other.gameObject);
             collidingObject = other.gameObject;
             isColliding = true;
+
+            // Check if hand hit a difficulty button
+            DifficultyButton button = other.gameObject.GetComponent<DifficultyButton>();
+            if (button != null)
+            {
+                button.SetDifficulty();
+            }
         }
     }
 

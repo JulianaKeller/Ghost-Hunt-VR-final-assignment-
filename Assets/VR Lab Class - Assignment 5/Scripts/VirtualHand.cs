@@ -4,7 +4,6 @@ using UnityEngine.InputSystem;
 
 public class VirtualHand : MonoBehaviour
 {
-    
     #region Member Variables
 
     public InputActionProperty grabAction;

@@ -5,6 +5,7 @@ using Unity.Netcode;
 
 public class NetworkVariableManager : NetworkBehaviour
 {
+    //Follows the singleton pattern, so other scripts can get the NetworkVariableManager with NetworkVariableManager.Instance
     public static NetworkVariableManager Instance;
 
     // Game-wide variables
@@ -25,8 +26,14 @@ public class NetworkVariableManager : NetworkBehaviour
 
     private void Awake()
     {
-        if (Instance == null) Instance = this;
-        else Destroy(gameObject);
+        if (Instance == null)
+        {
+            Instance = this;
+        }
+        else
+        {
+            Destroy(gameObject); //Prevents multiple instances
+        }
     }
 
     public override void OnNetworkSpawn()
@@ -89,7 +96,6 @@ public class NetworkVariableManager : NetworkBehaviour
         }
     }
 
-    // Sets the game timer (useful for synchronization)
     public void SetGameTime(int time)
     {
         if (IsServer)
@@ -98,10 +104,29 @@ public class NetworkVariableManager : NetworkBehaviour
         }
     }
 
-    // Gets the game difficulty
     public int GetGameDifficulty()
     {
         return GameDifficulty.Value;
+    }
+
+    public void SetGameDifficulty(int newDifficulty)
+    {
+        if (IsServer)
+        {
+            GameDifficulty.Value = newDifficulty;
+            Debug.Log("Game difficulty set to " + newDifficulty);
+        }
+        else
+        {
+            SetGameDifficultyServerRpc(newDifficulty);
+        }
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    private void SetGameDifficultyServerRpc(int newDifficulty)
+    {
+        GameDifficulty.Value = newDifficulty;
+        Debug.Log("Game difficulty updated by server to " + newDifficulty);
     }
 
     public int GetCaughtGhostsCount()

@@ -412,7 +412,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2679059498078427805}
-  - component: {fileID: 3960432902718170465}
   - component: {fileID: 1821412047879728882}
   - component: {fileID: 7202416083162761210}
   - component: {fileID: 7813883318934826503}
@@ -439,75 +438,6 @@ Transform:
   - {fileID: 5944169173779336167}
   m_Father: {fileID: 7216047634103647854}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &3960432902718170465
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4284957711837968130}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c2fadf230d1919748a9aa21d40f74619, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_TrackingType: 0
-  m_UpdateType: 0
-  m_IgnoreTrackingState: 0
-  m_PositionInput:
-    m_UseReference: 0
-    m_Action:
-      m_Name: Position
-      m_Type: 0
-      m_ExpectedControlType: Vector3
-      m_Id: 84a9c910-7b67-4598-ab21-87124812e0af
-      m_Processors: 
-      m_Interactions: 
-      m_SingletonActionBindings: []
-      m_Flags: 0
-    m_Reference: {fileID: 0}
-  m_RotationInput:
-    m_UseReference: 0
-    m_Action:
-      m_Name: Rotation
-      m_Type: 0
-      m_ExpectedControlType: Quaternion
-      m_Id: 9fa15fac-f142-426a-b01f-95e2446b9cce
-      m_Processors: 
-      m_Interactions: 
-      m_SingletonActionBindings: []
-      m_Flags: 0
-    m_Reference: {fileID: 0}
-  m_TrackingStateInput:
-    m_UseReference: 0
-    m_Action:
-      m_Name: Tracking State
-      m_Type: 0
-      m_ExpectedControlType: Integer
-      m_Id: 5897beff-0763-469f-8e16-536c94a50f4a
-      m_Processors: 
-      m_Interactions: 
-      m_SingletonActionBindings: []
-      m_Flags: 0
-    m_Reference: {fileID: 0}
-  m_PositionAction:
-    m_Name: 
-    m_Type: 0
-    m_ExpectedControlType: 
-    m_Id: 7f045d61-2951-4bd1-83e9-88435cf7727d
-    m_Processors: 
-    m_Interactions: 
-    m_SingletonActionBindings: []
-    m_Flags: 0
-  m_RotationAction:
-    m_Name: 
-    m_Type: 0
-    m_ExpectedControlType: 
-    m_Id: b39c63c6-a88a-452e-82c0-b9a2ffce9804
-    m_Processors: 
-    m_Interactions: 
-    m_SingletonActionBindings: []
-    m_Flags: 0
 --- !u!114 &1821412047879728882
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1433,7 +1363,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 2624234233
+  GlobalObjectIdHash: 2956674514
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -1955,6 +1885,15 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 2099430745597076509, guid: 6247120140379db409da02def1bb4f1c, type: 3}
       insertIndex: -1
       addedObject: {fileID: 5716482995718900927}
+    - targetCorrespondingSourceObject: {fileID: 4464073125689820186, guid: 6247120140379db409da02def1bb4f1c, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 695838619226298993}
+    - targetCorrespondingSourceObject: {fileID: 4464073125689820186, guid: 6247120140379db409da02def1bb4f1c, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 966508232388978607}
+    - targetCorrespondingSourceObject: {fileID: 4464073125689820186, guid: 6247120140379db409da02def1bb4f1c, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 7276661908331210588}
     - targetCorrespondingSourceObject: {fileID: 6191119211973901250, guid: 6247120140379db409da02def1bb4f1c, type: 3}
       insertIndex: -1
       addedObject: {fileID: 5547926422833174708}
@@ -1968,6 +1907,73 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 8353087298336664291}
   m_SourcePrefab: {fileID: 100100000, guid: 6247120140379db409da02def1bb4f1c, type: 3}
+--- !u!1 &43575619541880449 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 4464073125689820186, guid: 6247120140379db409da02def1bb4f1c, type: 3}
+  m_PrefabInstance: {fileID: 4425170434982759067}
+  m_PrefabAsset: {fileID: 0}
+--- !u!54 &695838619226298993
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 43575619541880449}
+  serializedVersion: 4
+  m_Mass: 1
+  m_Drag: 0
+  m_AngularDrag: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 0
+  m_IsKinematic: 1
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
+--- !u!65 &966508232388978607
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 43575619541880449}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 50.7901, y: 84.195335, z: 28.619598}
+  m_Center: {x: 5.2044497, y: 4.5626335, z: 6.5659003}
+--- !u!114 &7276661908331210588
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 43575619541880449}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e1cc430591689da438aa380d02f206c6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  isColliding: 0
+  collidingObject: {fileID: 0}
 --- !u!1 &52885856470497041 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 4454832406832463242, guid: 6247120140379db409da02def1bb4f1c, type: 3}
@@ -2242,7 +2248,7 @@ Rigidbody:
   m_ImplicitCom: 1
   m_ImplicitTensor: 1
   m_UseGravity: 0
-  m_IsKinematic: 0
+  m_IsKinematic: 1
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
@@ -2275,7 +2281,7 @@ BoxCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 0
+  m_IsTrigger: 1
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3

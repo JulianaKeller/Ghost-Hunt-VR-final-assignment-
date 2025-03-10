@@ -27,9 +27,14 @@ public class GhostFadeEffects : NetworkBehaviour
     private GeistBewegung geistBewegung;
 
     // Network Variables (Synced across all clients)
-    private NetworkList<float> fadeAlphas = new NetworkList<float>();
+    private NetworkVariable<float> fadeAlpha = new NetworkVariable<float>(1f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+
     private NetworkVariable<float> particleEmissionRate = new NetworkVariable<float>(0f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
 
+    public override void OnDestroy()
+    {
+        base.OnDestroy();
+    }
 
     public override void OnNetworkSpawn()
     {
@@ -48,29 +53,14 @@ public class GhostFadeEffects : NetworkBehaviour
         //Debug.Log("Entering onNetworkSpawn...");
         if (IsServer)
         {
-            // Start fading logic only on the server:
-            // Start periodically fading and reappearing on the server
-            
-            InitializeFadeList();
             StartFading();
-        }
-    }
-
-    void InitializeFadeList()
-    {
-        if (fadeAlphas.Count == 0)
-        {
-            foreach (Material mat in ghostRenderer.materials)
-            {
-                fadeAlphas.Add(1f);
-            }
         }
     }
 
     void Start()
     {
         ghostRenderer = GetComponentInChildren<SkinnedMeshRenderer>();
-        ghostParticles = GetComponentInChildren<ParticleSystem>(); // Find the particle system
+        ghostParticles = GetComponentInChildren<ParticleSystem>();
         particleEmission = ghostParticles.emission;
         geistBewegung = GetComponent<GeistBewegung>();
     }
@@ -159,33 +149,21 @@ public class GhostFadeEffects : NetworkBehaviour
         //Debug.Log("Materials: " + materials.Length);
 
         float elapsedTime = 0f;
-        float[] startAlphas = new float[materials.Length];
-
-        // Store initial alpha values
-        for (int i = 0; i < materials.Length; i++)
-        {
-            startAlphas[i] = materials[i].color.a;
-        }
+        float startAlpha = materials[0].color.a;
 
         while (elapsedTime < duration)
         {
             elapsedTime += Time.deltaTime;
             float newAlphaFactor = elapsedTime / duration;
 
-            for (int i = 0; i < materials.Length; i++)
-            {
-                float newAlpha = Mathf.Lerp(startAlphas[i], targetAlpha, newAlphaFactor);
-                fadeAlphas[i] = newAlpha;
-            }
+            float newAlpha = Mathf.Lerp(startAlpha, targetAlpha, newAlphaFactor);
+            fadeAlpha.Value = newAlpha;
 
             yield return null; //continues execution here next frame
         }
 
         // Ensure final alpha is set correctly
-        for (int i = 0; i < materials.Length; i++)
-        {
-            fadeAlphas[i] = targetAlpha;
-        }
+        fadeAlpha.Value = targetAlpha;
     }
 
     private void ApplyFade()
@@ -196,11 +174,8 @@ public class GhostFadeEffects : NetworkBehaviour
 
         for (int i = 0; i < materials.Length; i++)
         {
-            if (i < fadeAlphas.Count)
-            {
-                Color color = materials[i].color;
-                materials[i].color = new Color(color.r, color.g, color.b, fadeAlphas[i]);
-            }
+            Color color = materials[i].color;
+            materials[i].color = new Color(color.r, color.g, color.b, fadeAlpha.Value);
         }
     }
 
@@ -242,8 +217,8 @@ public class GhostFadeEffects : NetworkBehaviour
             {
                 Color color = materials[i].color;
                 materials[i].color = new Color(color.r, color.g, color.b, 1f);  // Set alpha to 1 (fully visible)
-                fadeAlphas[i] = 1f;  // Sync the network list with the new alpha
             }
+            fadeAlpha.Value = 1f;
         }
     }
 

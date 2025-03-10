@@ -97,9 +97,8 @@ public class ToolAccessHandler : NetworkBehaviour
     }
 
     [ServerRpc(RequireOwnership = false)]
-    public void RequestAccessServerRpc(int toolIndex, ServerRpcParams rpcParams = default)
+    public void RequestAccessServerRpc(int toolIndex, ulong playerId, ServerRpcParams rpcParams = default)
     {
-        ulong playerId = rpcParams.Receive.SenderClientId;
         bool granted = RequestAccess(toolIndex, playerId);
 
         RequestAccessClientRpc(toolIndex, granted, playerId);
@@ -110,10 +109,22 @@ public class ToolAccessHandler : NetworkBehaviour
     {
         if (playerId == NetworkManager.Singleton.LocalClientId)
         {
-            if (granted)
-                _toolsManager.OnAccessGranted(toolIndex);
+            GameObject player = NetworkManager.Singleton.ConnectedClients[playerId].PlayerObject.gameObject;
+
+            // Find the toolsManager script on that player
+            toolsManager playerToolsManager = player.GetComponent<toolsManager>();
+
+            if (playerToolsManager != null)
+            {
+                if (granted)
+                    playerToolsManager.OnAccessGranted(toolIndex);
+                else
+                    playerToolsManager.OnAccessDenied();
+            }
             else
-                _toolsManager.OnAccessDenied();
+            {
+                Debug.LogError("toolsManager component not found on player object.");
+            }
         }
     }
 

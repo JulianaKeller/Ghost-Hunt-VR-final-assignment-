@@ -5,18 +5,41 @@ using Unity.Netcode;
 
 public class SpawnGhosts : NetworkBehaviour
 {
+    public static SpawnGhosts Instance { get; private set; } // Singleton Instance
+
+    [Header("For Testing")]
+    public bool isAlwaysParalyzed = false;
+    public bool isAlwaysStunned = false;
+
+    [Header("References")]
+
     public GameObject ghostPrefab;
-    public GameObject spawnPointsParent; // Mögliche Spawnpunkte
+    public GameObject spawnPointsParent;
     [Range(1, 10)]
-    private int minGhostCount = 3; // Mindestanzahl an Geistern in der Szene
-    public float spawnInterval = 5f; // Zeitintervall für Überprüfung/Spawn
+
+    [Header("Settings")]
+
+    private int minGhostCount = 3;
+    public float spawnInterval = 5f;
 
     private List<GameObject> activeGhosts = new List<GameObject>();
     private Transform[] spawnPoints;
 
+    private void Awake()
+    {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject); // Ensure only one instance exists
+            return;
+        }
+        Instance = this;
+    }
+
     public override void OnNetworkSpawn()
     {
         Debug.Log("OnNetworkSpawn called. IsServer: " + IsServer);
+
+        if (!IsServer) return; // Only the server handles spawning
 
         minGhostCount = NetworkVariableManager.Instance.GetDifficultyProperties().SpawnGhostsCount;
 
@@ -61,16 +84,37 @@ public class SpawnGhosts : NetworkBehaviour
         }
         else if(activeGhosts.Count > minGhostCount)
         {
-            DespawnGhost(activeGhosts[activeGhosts.Count - 1]);
+            RequestDespawnGhost(activeGhosts[activeGhosts.Count - 1]);
         }
     }
 
-    public void DespawnGhost(GameObject obj)
+    public void RequestDespawnGhost(GameObject obj)
+    {
+        if (IsServer)
+        {
+            DespawnGhost(obj); // If called on server, just despawn immediately
+        }
+        else
+        {
+            DespawnGhostServerRpc(obj.GetComponent<NetworkObject>().NetworkObjectId); // Clients must send a request
+        }
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    private void DespawnGhostServerRpc(ulong networkObjectId)
+    {
+        if (NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(networkObjectId, out NetworkObject netObj))
+        {
+            DespawnGhost(netObj.gameObject);
+        }
+    }
+
+    private void DespawnGhost(GameObject obj)
     {
         if (IsServer)
         {
             NetworkObject netObj = obj.GetComponent<NetworkObject>();
-            if (netObj.IsSpawned && netObj.IsOwner)
+            if (netObj != null && netObj.IsSpawned)
             {
                 netObj.Despawn(true);
                 activeGhosts.Remove(obj);
@@ -86,6 +130,7 @@ public class SpawnGhosts : NetworkBehaviour
             Quaternion randomRotation = Quaternion.Euler(0, Random.Range(0f, 360f), 0);
 
             GameObject newGhost = Instantiate(ghostPrefab, new Vector3(spawnPoint.position.x, -2.5f, spawnPoint.position.z), randomRotation);
+            newGhost.transform.GetComponent<GeistBewegung>().SetTestingMode(isAlwaysParalyzed, isAlwaysStunned);
 
             NetworkObject instanceNetworkObject = newGhost.GetComponent<NetworkObject>();
             if (instanceNetworkObject != null && IsServer) // Ensure this is running only on the server

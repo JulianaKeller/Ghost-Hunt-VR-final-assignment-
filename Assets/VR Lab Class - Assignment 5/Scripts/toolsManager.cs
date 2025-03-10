@@ -17,9 +17,13 @@ public class toolsManager : NetworkBehaviour
     private int currentToolIndex;
     private int nextToolIndex;
 
-    void Start()
+    public override void OnNetworkSpawn()
     {
-        if (!IsOwner) return;
+        if (!IsOwner)
+        {
+            Debug.Log("Quitting ToolManager OnNetworkSpawn");
+            return;
+        }
 
         toolAccessHandler = GameObject.Find("ToolAccessHandler");
         if(toolAccessHandler != null){
@@ -45,15 +49,20 @@ public class toolsManager : NetworkBehaviour
             }
         }
         else{
-            Debug.Log("toolsCollection is Null!");
+            Debug.Log("toolsCollection is Null!!!");
         }
     }
 
     void Update()
     {
-        if (!IsOwner) return;
+        if (!IsOwner)
+        {
+            Debug.Log("Not Owner of ToolsManager, quitting...");
+            return;
+        }
 
         if (switchAction.action.WasPressedThisFrame()){
+            Debug.Log("Switching Tool...");
             NextTool();
         }
     }
@@ -62,7 +71,7 @@ public class toolsManager : NetworkBehaviour
     {
         if (toolAccessHandler)
         {
-            toolAccessHandler.GetComponent<ToolAccessHandler>().RequestAccessServerRpc(nextToolIndex);
+            toolAccessHandler.GetComponent<ToolAccessHandler>().RequestAccessServerRpc(nextToolIndex, NetworkManager.Singleton.LocalClientId);
         }
     }
 

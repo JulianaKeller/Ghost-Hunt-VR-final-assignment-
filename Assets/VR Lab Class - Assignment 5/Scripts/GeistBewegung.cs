@@ -20,6 +20,10 @@ public class GeistBewegung : NetworkBehaviour
     public LayerMask Ghosts;
     [SerializeField] private Material ghostMaterial;
 
+    [Header("For Testing")]
+    private bool isAlwaysParalyzed = false;
+    private bool isAlwaysStunned = false;
+
     //Rotation values
     private float timeSinceLastTurn = 0f;
     private float rotationChance = 0f;
@@ -37,6 +41,14 @@ public class GeistBewegung : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
+        if (isAlwaysParalyzed)
+        {
+            //isParalyzed.Value = true;
+        }
+        if (isAlwaysStunned)
+        {
+            //isStunned.Value = true;
+        }
         movementSpeedMultiplier = NetworkVariableManager.Instance.GetDifficultyProperties().GhostWalkingSpeed;
 
         if (IsServer)
@@ -85,6 +97,12 @@ public class GeistBewegung : NetworkBehaviour
         animator.SetFloat("IdleChance", idleChance.Value);
     }
 
+    public void SetTestingMode(bool paralyzed, bool stunned)
+    {
+        isAlwaysParalyzed = paralyzed;
+        isAlwaysStunned = stunned;
+    }
+
     void UpdateWalkingAnimation()
     {
         if (!IsServer) return;
@@ -106,7 +124,7 @@ public class GeistBewegung : NetworkBehaviour
 
     public void Capture()
     {
-
+        NetworkVariableManager.Instance.GhostCaptured();
     }
 
     #region Rotation methods
@@ -161,7 +179,11 @@ public class GeistBewegung : NetworkBehaviour
     [Rpc(SendTo.Server)]
     public void UnstunLaserServerRpc() //Laser
     {
-        isStunned.Value = false;
+        if (!isAlwaysStunned)
+        {
+            isStunned.Value = false;
+        }
+        
         animator.SetBool("isStunned", false);
     }
 
@@ -176,7 +198,11 @@ public class GeistBewegung : NetworkBehaviour
         isParalyzed.Value = true;
         animator.SetBool("isParalyzed", true);  // Ensures this change is reflected across all clients
         yield return new WaitForSeconds(duration);
-        isParalyzed.Value = false;
+        if (!isAlwaysParalyzed)
+        {
+            isParalyzed.Value = false;
+        }
+        
         animator.SetBool("isParalyzed", false);
     }
 
@@ -204,11 +230,19 @@ public class GeistBewegung : NetworkBehaviour
 
     public bool IsParalyzed() //Flashlight
     {
+        if (isAlwaysParalyzed)
+        {
+            return true;
+        }
         return isParalyzed.Value;
     }
 
     public bool IsStunned() //Laser
     {
+        if (isAlwaysStunned)
+        {
+            return true;
+        }
         return isStunned.Value;
     }
 

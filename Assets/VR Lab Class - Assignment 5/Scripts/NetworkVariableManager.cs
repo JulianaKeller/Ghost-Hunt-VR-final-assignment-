@@ -22,7 +22,9 @@ public class NetworkVariableManager : NetworkBehaviour
     public NetworkVariable<float> GhostWalkingSpeed = new NetworkVariable<float>(1f);
     public NetworkVariable<float> LaserRechargeDuration = new NetworkVariable<float>(5f);
     public NetworkVariable<float> FlashlightCooldownDuration = new NetworkVariable<float>(1f);
-    public NetworkVariable<float> VacuumDuration = new NetworkVariable<float>(4f);
+    public NetworkVariable<float> VacuumMaxCharge = new NetworkVariable<float>(4f);
+    public NetworkVariable<float> VacuumDechargeRate = new NetworkVariable<float>(1f);
+    public NetworkVariable<float> VacuumRechargeRate = new NetworkVariable<float>(1f);
 
     private void Awake()
     {
@@ -62,8 +64,10 @@ public class NetworkVariableManager : NetworkBehaviour
                 GhostWalkingSpeed.Value = 0.5f;
                 LaserRechargeDuration.Value = 2f;
                 FlashlightCooldownDuration.Value = 0.5f;
-                VacuumDuration.Value = 2f;
+                VacuumMaxCharge.Value = 10f;
+                VacuumDechargeRate.Value = 1f;
                 GameTimeLimit.Value = 500;
+                VacuumRechargeRate.Value = 1f;
                 break;
 
             case 2: // Medium
@@ -74,8 +78,10 @@ public class NetworkVariableManager : NetworkBehaviour
                 GhostWalkingSpeed.Value = 1f;
                 LaserRechargeDuration.Value = 5f;
                 FlashlightCooldownDuration.Value = 1f;
-                VacuumDuration.Value = 4f;
+                VacuumMaxCharge.Value = 8f;
+                VacuumDechargeRate.Value = 1f;
                 GameTimeLimit.Value = 300;
+                VacuumRechargeRate.Value = 1f;
                 break;
 
             case 3: // Hard
@@ -86,8 +92,10 @@ public class NetworkVariableManager : NetworkBehaviour
                 GhostWalkingSpeed.Value = 2f;
                 LaserRechargeDuration.Value = 8f;
                 FlashlightCooldownDuration.Value = 2f;
-                VacuumDuration.Value = 6f;
+                VacuumMaxCharge.Value = 6f;
                 GameTimeLimit.Value = 200;
+                VacuumDechargeRate.Value = 1f;
+                VacuumRechargeRate.Value = 1f;
                 break;
 
             default:
@@ -145,6 +153,14 @@ public class NetworkVariableManager : NetworkBehaviour
         }
     }
 
+    public void GhostCaptured()
+    {
+        if (IsServer)
+        {
+            CaughtGhostsCount.Value += 1;
+        }
+    }
+
     // Increments the caught ghost count (Server Only)
     public void IncrementCaughtGhosts()
     {
@@ -177,10 +193,10 @@ public class NetworkVariableManager : NetworkBehaviour
 
     // Gets all difficulty properties
     public (int SpawnGhostsCount, float GhostMinVisibilityDuration, float ParalyzeDuration, float StunDuration, float GhostWalkingSpeed,
-            float LaserRechargeDuration, float FlashlightCooldownDuration, float VacuumDuration) GetDifficultyProperties()
+            float LaserRechargeDuration, float FlashlightCooldownDuration, float VacuumMaxCharge, float VacuumDechargeRate, float VacuumRechargeRate) GetDifficultyProperties()
     {
         return (SpawnGhostsCount.Value, GhostMinVisibilityDuration.Value, ParalyzeDuration.Value,
                 StunDuration.Value, GhostWalkingSpeed.Value, LaserRechargeDuration.Value,
-                FlashlightCooldownDuration.Value, VacuumDuration.Value);
+                FlashlightCooldownDuration.Value, VacuumMaxCharge.Value, VacuumDechargeRate.Value, VacuumRechargeRate.Value);
     }
 }

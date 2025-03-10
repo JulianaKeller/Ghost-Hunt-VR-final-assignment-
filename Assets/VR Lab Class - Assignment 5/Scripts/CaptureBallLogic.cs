@@ -81,6 +81,6 @@ public class CaptureBallLogic : NetworkBehaviour
     {
         yield return new WaitForSeconds(hoverTimeAfterHit);
 
-        GhostSpawner.DespawnGhost(ghost);
+        GhostSpawner.RequestDespawnGhost(ghost);
     }
 }

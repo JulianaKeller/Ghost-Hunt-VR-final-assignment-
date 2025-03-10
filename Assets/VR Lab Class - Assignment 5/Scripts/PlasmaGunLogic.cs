@@ -33,13 +33,21 @@ public class PlasmaGunLogic : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
+        HideLaserLine();
+        HidePlasmaLine();
+
         maxDuration = NetworkVariableManager.Instance.GetDifficultyProperties().StunDuration;
         rechargeTime = NetworkVariableManager.Instance.GetDifficultyProperties().LaserRechargeDuration;
     }
 
     void Update()
     {
-        if (isRecharging) return;
+        if (isRecharging)
+        {
+            HideLaserLine();
+            HidePlasmaLine();
+            return;
+        }
 
         if (!isFiring && triggerAction.action.IsPressed())
         {
@@ -63,6 +71,18 @@ public class PlasmaGunLogic : NetworkBehaviour
             laserStartPos.Value = laserLine.GetPosition(0);
             laserEndPos.Value = laserLine.GetPosition(1);
         }
+    }
+
+    void HideLaserLine()
+    {
+        laserLine.enabled = false;
+        SyncLaserStateClientRpc(false, false);
+    }
+
+    void HidePlasmaLine()
+    {
+        plasmaLine.enabled = false;
+        SyncLaserStateClientRpc(false, false);
     }
 
     void StartFiring()

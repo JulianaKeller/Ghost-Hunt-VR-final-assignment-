@@ -1814,6 +1814,10 @@ PrefabInstance:
       propertyPath: GlobalObjectIdHash
       value: 2956674514
       objectReference: {fileID: 0}
+    - target: {fileID: 2016732142084134409, guid: 6247120140379db409da02def1bb4f1c, type: 3}
+      propertyPath: GlobalObjectIdHash
+      value: 2956674514
+      objectReference: {fileID: 0}
     - target: {fileID: 2099430745597076509, guid: 6247120140379db409da02def1bb4f1c, type: 3}
       propertyPath: m_Name
       value: ToolCollection
@@ -1829,6 +1833,10 @@ PrefabInstance:
     - target: {fileID: 4339414751117842031, guid: 6247120140379db409da02def1bb4f1c, type: 3}
       propertyPath: GlobalObjectIdHash
       value: 2956674514
+      objectReference: {fileID: 0}
+    - target: {fileID: 5825527903967830892, guid: 6247120140379db409da02def1bb4f1c, type: 3}
+      propertyPath: m_Parameters.widthMultiplier
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7711621367587310596, guid: 6247120140379db409da02def1bb4f1c, type: 3}
       propertyPath: m_LocalPosition.x
@@ -1879,6 +1887,7 @@ PrefabInstance:
     - {fileID: 3868306641427440113, guid: 6247120140379db409da02def1bb4f1c, type: 3}
     - {fileID: 8763911085091836367, guid: 6247120140379db409da02def1bb4f1c, type: 3}
     - {fileID: 2987170746971371821, guid: 6247120140379db409da02def1bb4f1c, type: 3}
+    - {fileID: 2016732142084134409, guid: 6247120140379db409da02def1bb4f1c, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents:

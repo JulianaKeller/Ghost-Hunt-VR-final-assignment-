@@ -13,7 +13,7 @@ public class VacuumGunLogic : NetworkBehaviour
     public float vacuumRechargeRate = 1f;
     public float maxVacuumCharge = 5;
     public float vibrationDuration = 5f;
-    public float suctionDuration = 3.7f;
+    public float suctionDuration = 4f;
 
     [Header("References")]
     public Transform vacuumPoint;

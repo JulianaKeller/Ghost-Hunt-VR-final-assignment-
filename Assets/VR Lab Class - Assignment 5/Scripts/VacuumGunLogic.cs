@@ -13,13 +13,14 @@ public class VacuumGunLogic : NetworkBehaviour
     public float vacuumRechargeRate = 1f;
     public float maxVacuumCharge = 5;
     public float vibrationDuration = 5f;
-    public float suctionDuration = 1f;
+    public float suctionDuration = 3.7f;
 
     [Header("References")]
     public Transform vacuumPoint;
     public LayerMask ghostLayer;
     public InputActionProperty triggerAction;
     public string ghostTag = "Ghost";
+    public AudioSource audioSource;
 
     [Header("UI Elements")]
     public RawImage vacuumChargeImage;
@@ -188,6 +189,8 @@ public class VacuumGunLogic : NetworkBehaviour
 
         while (elapsed < vibrationDuration)
         {
+            ghostInitialPosition = ghost.position;
+
             Debug.Log("Ghost is vibrating...");
             if (targetGhost == null || !targetGhost.GetComponent<GeistBewegung>().IsParalyzed())
             {
@@ -214,7 +217,16 @@ public class VacuumGunLogic : NetworkBehaviour
 
     IEnumerator SuckGhost(Transform ghost)
     {
+        audioSource.Play();
+
+        ghostInitialPosition = ghost.position;
+
         float elapsed = 0f;
+
+        if (IsOwner)
+        {
+            SetGhostVacuumedServerRpc(ghost.GetComponent<NetworkObject>());
+        }
 
         while (elapsed < suctionDuration)
         {
@@ -286,6 +298,34 @@ public class VacuumGunLogic : NetworkBehaviour
                 Debug.Log("Vacuum charge decreased to " + vacuumCharge);
             }
             yield return new WaitForSeconds(1f);
+        }
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    void SetGhostVacuumedServerRpc(NetworkObjectReference ghostObjectRef)
+    {
+        if (ghostObjectRef.TryGet(out NetworkObject ghostNetworkObject))
+        {
+            Animator ghostAnimator = ghostNetworkObject.gameObject.GetComponent<Animator>();
+            if (ghostAnimator != null)
+            {
+                ghostAnimator.SetBool("isVacuumed", true);
+            }
+        }
+
+        SetGhostVacuumedClientRpc(ghostObjectRef);
+    }
+
+    [ClientRpc]
+    void SetGhostVacuumedClientRpc(NetworkObjectReference ghostObjectRef)
+    {
+        if (ghostObjectRef.TryGet(out NetworkObject ghostNetworkObject))
+        {
+            Animator ghostAnimator = ghostNetworkObject.gameObject.GetComponent<Animator>();
+            if (ghostAnimator != null)
+            {
+                ghostAnimator.SetBool("isVacuumed", true);
+            }
         }
     }
 }

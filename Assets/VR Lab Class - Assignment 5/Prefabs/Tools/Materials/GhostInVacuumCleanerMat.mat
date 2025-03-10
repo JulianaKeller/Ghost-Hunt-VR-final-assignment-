@@ -101,8 +101,9 @@ Material:
     - _ZWrite: 0
     m_Colors:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
-    - _Color1: {r: 0, g: 1, b: 0.9467344, a: 0}
-    - _Color2: {r: 0.4528302, g: 0.5297412, b: 1, a: 0}
+    - _Color1: {r: 0, g: 0, b: 0, a: 0}
+    - _Color2: {r: 0, g: 1, b: 0.79999995, a: 0}
+    - _Color_3: {r: 0, g: 0, b: 0, a: 0}
     - _DissolveSpeed: {r: -0.5, g: 0, b: 0, a: 0}
     - _EmissionColor: {r: 0, g: 1, b: 0.82118607, a: 1}
     - _MainTexSpeed: {r: 3, g: 0, b: 0, a: 0}

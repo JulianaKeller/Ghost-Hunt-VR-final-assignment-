@@ -20,7 +20,8 @@ public class VacuumGunLogic : NetworkBehaviour
     public LayerMask ghostLayer;
     public InputActionProperty triggerAction;
     public string ghostTag = "Ghost";
-    public AudioSource audioSource;
+    public AudioSource[] capturedAudioSources;
+    public AudioSource vacuumAudioSource;
 
     [Header("UI Elements")]
     public RawImage vacuumChargeImage;
@@ -211,13 +212,25 @@ public class VacuumGunLogic : NetworkBehaviour
             yield return new WaitForSeconds(0.1f);
             elapsed += 0.1f;
         }
-
         StartCoroutine(SuckGhost(ghost));
     }
 
     IEnumerator SuckGhost(Transform ghost)
     {
-        audioSource.Play();
+        if (capturedAudioSources != null)
+        {
+            foreach (var audioSource in capturedAudioSources)
+            {
+                if (audioSource != null)
+                {
+                    audioSource.Play();
+                }
+            }
+        }
+        else
+        {
+            Debug.LogWarning("An AudioSource component is missing!");
+        }
 
         ghostInitialPosition = ghost.position;
 
@@ -272,6 +285,18 @@ public class VacuumGunLogic : NetworkBehaviour
         {
             StopCoroutine(vacuumCoroutine);
             vacuumCoroutine = null;
+        }
+    }
+
+    private void StopVacuumAudio()
+    {
+        if (vacuumAudioSource != null && vacuumAudioSource.isPlaying)
+        {
+            vacuumAudioSource.Stop();
+        }
+        else
+        {
+            Debug.LogWarning("An AudioSource component is missing!");
         }
     }
 

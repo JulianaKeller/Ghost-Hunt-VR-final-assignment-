@@ -10,11 +10,20 @@ public class SpawnCaptureBall : NetworkBehaviour
     private GameObject currentCaptureBall;
     public Transform spawnPoint;
 
-    public override void OnNetworkSpawn()
+    private void OnEnable()
     {
         if (IsServer) // Ensure only the server spawns the ball
         {
+            Debug.Log("Spawning new Capture Ball...");
             SpawnNewBall();
+        }
+    }
+
+    private void OnDisable()
+    {
+        if (IsServer) // Ensure only the server despawns the ball
+        {
+            DespawnCurrentBall();
         }
     }
 
@@ -26,6 +35,8 @@ public class SpawnCaptureBall : NetworkBehaviour
             var ballNetworkObject = currentCaptureBall.GetComponent<NetworkObject>();
             ballNetworkObject.Spawn();
 
+            Debug.Log("New Capture Ball spawned!");
+
             // Get the follow script from the capture ball
             CaptureBallFollowMode followScript = currentCaptureBall.GetComponent<CaptureBallFollowMode>();
             if (followScript != null)
@@ -33,7 +44,22 @@ public class SpawnCaptureBall : NetworkBehaviour
                 // Pass the instance's spawnPoint to the capture ball
                 followScript.AttachBall(spawnPoint);
                 followScript.SetSpawner(this);
+                Debug.Log("Capture Ball attached to spawner");
             }
+        }
+    }
+
+    void DespawnCurrentBall()
+    {
+        if (currentCaptureBall != null)
+        {
+            NetworkObject ballNetworkObject = currentCaptureBall.GetComponent<NetworkObject>();
+            if (ballNetworkObject != null && ballNetworkObject.IsSpawned)
+            {
+                ballNetworkObject.Despawn();
+            }
+            Destroy(currentCaptureBall); // Ensure the object is also destroyed locally
+            currentCaptureBall = null;
         }
     }
 

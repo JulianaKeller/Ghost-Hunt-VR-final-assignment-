@@ -48,6 +48,10 @@ public class ThumbstickNavigation : MonoBehaviour
     public LayerMask groundLayerMask;
     private RaycastHit hit;
 
+    [Header("Boundary Configuration")]
+    public LayerMask boundaryLayerMask;
+    public float boundaryCheckDistance = 0.2f;
+
     private void Start()
     {
         if (head == null)
@@ -87,10 +91,18 @@ public class ThumbstickNavigation : MonoBehaviour
             movementDirection = -movementDirection;
             Vector3 displacement = movementDirection * Time.deltaTime;
 
-            transform.Translate(displacement, Space.World);
+            if (!IsBoundaryAhead(movementDirection))
+            {
+                transform.Translate(displacement, Space.World);
+            }
         }
     }
-    
+
+    private bool IsBoundaryAhead(Vector3 direction)
+    {
+        return Physics.Raycast(transform.position, direction.normalized, boundaryCheckDistance, boundaryLayerMask);
+    }
+
     private void ApplyRotation()
     {
         Vector2 rotationInput = rotationAction.action.ReadValue<Vector2>();

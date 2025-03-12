@@ -15,6 +15,8 @@ public class toolsManager : NetworkBehaviour
 
     private List<GameObject> tools = new List<GameObject>();
     private int currentToolIndex;
+    private NetworkVariable<int> currentToolIndexNet = new NetworkVariable<int>(0,
+    NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     private int nextToolIndex;
 
     public override void OnNetworkSpawn()
@@ -57,13 +59,23 @@ public class toolsManager : NetworkBehaviour
     {
         if (!IsOwner)
         {
-            Debug.Log("Not Owner of ToolsManager, quitting...");
             return;
         }
 
         if (switchAction.action.WasPressedThisFrame()){
             Debug.Log("Switching Tool...");
             NextTool();
+        }
+
+        if (IsClient && toolsCollection != null)
+        {
+            int index = currentToolIndexNet.Value;
+            if (currentToolIndex != index)
+            {
+                tools[currentToolIndex].SetActive(false);
+                tools[index].SetActive(true);
+                currentToolIndex = index;
+            }
         }
     }
 
@@ -77,11 +89,24 @@ public class toolsManager : NetworkBehaviour
 
     public void OnAccessGranted(int toolIndex)
     {
+        if (!IsOwner) return;
+
         tools[currentToolIndex].SetActive(false);
         toolAccessHandler.GetComponent<ToolAccessHandler>().ReleaseServerRpc(currentToolIndex);
 
+        currentToolIndexNet.Value = toolIndex;
         tools[toolIndex].SetActive(true);
-        currentToolIndex = toolIndex;
+
+        UpdateToolClientRpc(toolIndex);
+    }
+
+    [ClientRpc]
+    private void UpdateToolClientRpc(int toolIndex)
+    {
+        foreach (var tool in tools)
+            tool.SetActive(false);
+
+        tools[toolIndex].SetActive(true);
     }
 
     public void OnAccessDenied()

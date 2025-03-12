@@ -20,6 +20,7 @@ public class PlasmaGunLogic : NetworkBehaviour
     public LayerMask ghostLayer;
     public LineRenderer laserLine;
     public LineRenderer plasmaLine;
+    public AudioSource laserAudioSource;
 
     private bool isFiring = false;
     private bool isRecharging = false;
@@ -33,11 +34,25 @@ public class PlasmaGunLogic : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
+        base.OnNetworkSpawn();
+
         HideLaserLine();
         HidePlasmaLine();
 
+        if (IsClient)
+        {
+            SyncLaserStateClientRpc(laserEnabled.Value, plasmaEnabled.Value);
+            SyncLaserLineClientRpc(laserStartPos.Value, laserEndPos.Value);
+        }
+
         maxDuration = NetworkVariableManager.Instance.GetDifficultyProperties().StunDuration;
         rechargeTime = NetworkVariableManager.Instance.GetDifficultyProperties().LaserRechargeDuration;
+    }
+
+    private void Start()
+    {
+        laserEnabled.OnValueChanged += (oldValue, newValue) => laserLine.enabled = newValue;
+        plasmaEnabled.OnValueChanged += (oldValue, newValue) => plasmaLine.enabled = newValue;
     }
 
     void Update()
@@ -64,19 +79,37 @@ public class PlasmaGunLogic : NetworkBehaviour
         {
             UpdateLaser();
         }
-
-        // Sync the laser positions across clients
-        if (IsServer)
-        {
-            laserStartPos.Value = laserLine.GetPosition(0);
-            laserEndPos.Value = laserLine.GetPosition(1);
-        }
     }
 
     void HideLaserLine()
     {
         laserLine.enabled = false;
         SyncLaserStateClientRpc(false, false);
+    }
+
+    private void StopLaserAudio()
+    {
+        AudioSource[] audioSources = transform.GetComponents<AudioSource>();
+        foreach (AudioSource audioSource in audioSources)
+        {
+            if (audioSource != null && audioSource.isPlaying)
+            {
+                audioSource.Stop();
+            }
+            else
+            {
+                Debug.LogWarning("An AudioSource component is missing!");
+            }
+        }
+    }
+
+    private void PlayLaserAudio()
+    {
+        if (laserAudioSource != null && !laserAudioSource.isPlaying)
+        {
+            laserAudioSource.Play(); 
+            laserAudioSource.loop = true;
+        }
     }
 
     void HidePlasmaLine()
@@ -90,6 +123,8 @@ public class PlasmaGunLogic : NetworkBehaviour
         isFiring = true;
         laserLine.enabled = true;
         plasmaLine.enabled = false;
+
+        PlayLaserAudio();
 
         if (IsServer)
         {
@@ -117,6 +152,7 @@ public class PlasmaGunLogic : NetworkBehaviour
             targetGhost.GetComponent<GeistBewegung>().UnstunLaserServerRpc();
             targetGhost = null;
         }
+        StopLaserAudio();
     }
 
     void UpdateLaser()
@@ -169,6 +205,13 @@ public class PlasmaGunLogic : NetworkBehaviour
             }
 
             laserLine.SetPosition(1, laserStart + laserDirection * laserRange);
+        }
+
+        if (IsServer)
+        {
+            laserStartPos.Value = laserLine.GetPosition(0);
+            laserEndPos.Value = laserLine.GetPosition(1);
+            SyncLaserLineClientRpc(laserStartPos.Value, laserEndPos.Value);
         }
     }
 

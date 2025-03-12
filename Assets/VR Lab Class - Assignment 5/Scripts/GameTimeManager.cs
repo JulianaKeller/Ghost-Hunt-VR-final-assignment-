@@ -5,38 +5,37 @@ using Unity.Netcode;
 
 public class GameTimeManager : NetworkBehaviour
 {
+    public Canvas canvasInGame;
+    public Canvas canvasGameEnd;
+    public AudioSource gameEndMusic;
+    public GameObject bgSounds;
+    public GameObject gameEndSounds;
+
+
     public override void OnNetworkSpawn()
     {
-        // Only the server will handle the game time updates
+        // Only the server should handle the game time updates
         if (IsServer)
         {
             StartCoroutine(UpdateGameTime());
         }
     }
 
-    // Coroutine to update the game time every second
     private IEnumerator UpdateGameTime()
     {
         while (true)
         {
-            // Wait for 1 second
             yield return new WaitForSeconds(1f);
 
-            // Update game time on the server
             if (IsServer)
             {
-                Debug.Log("Updating Game Time...");
-                // Get the current game time and game time limit from the NetworkVariableManager
                 int currentTime = NetworkVariableManager.Instance.GetGameTime();
                 int gameTimeLimit = NetworkVariableManager.Instance.GetGameTimeLimit();
 
-                // Increase game time by 1 second
                 currentTime += 1;
 
-                // Set the new game time
                 NetworkVariableManager.Instance.SetGameTime(currentTime);
 
-                // If game time exceeds the game time limit, end the game
                 if (currentTime >= gameTimeLimit)
                 {
                     EndGame();
@@ -46,18 +45,42 @@ public class GameTimeManager : NetworkBehaviour
         }
     }
 
-    // Ends the game (this could trigger various game-ending logic)
     private void EndGame()
     {
-        // For now, we'll just log the game over message
-        Debug.Log("Game Over! Time has run out.");
+        if (canvasInGame != null) canvasInGame.gameObject.SetActive(false);
+        if (canvasGameEnd != null) canvasGameEnd.gameObject.SetActive(true);
 
-        // You can call methods here to end the game, such as:
-        // - Show game over UI
-        // - Notify all players
-        // - Stop game logic (e.g., disable player movement)
+        if(bgSounds != null)
+        {
+            enableSounds(bgSounds, false);
+        }
+        if(gameEndSounds != null)
+        {
+            enableSounds(gameEndSounds, true);
+        }
 
-        // Example of notifying all clients (could be expanded with events or game state changes)
-        NetworkVariableManager.Instance.SetGameTimeLimit(0); // Prevent further updates, for example.
+        SpawnGhosts.Instance.DespawnAllGhostAndStopSpawning();
+
+        if (gameEndMusic != null) gameEndMusic.Play();
+    }
+
+    private void enableSounds(GameObject sounds, bool enable)
+    {
+        if(sounds != null)
+        {
+            AudioSource[] audioSources = sounds.GetComponents<AudioSource>();
+
+            foreach (AudioSource audioSource in audioSources)
+            {
+                if (enable)
+                {
+                    audioSource.Play();
+                }
+                else
+                {
+                    audioSource.enabled = false;
+                }
+            }
+        }
     }
 }

@@ -21,6 +21,20 @@ public class FlashlightLogic : NetworkBehaviour
 
     private bool canFlash = true;
 
+    private NetworkVariable<bool> isFlashlightOn = new NetworkVariable<bool>(false,
+    NetworkVariableReadPermission.Everyone,
+    NetworkVariableWritePermission.Server);
+
+    void Start()
+    {
+        isFlashlightOn.OnValueChanged += OnFlashlightStateChanged;
+    }
+
+    private void OnFlashlightStateChanged(bool oldValue, bool newValue)
+    {
+        flashlightLight.enabled = newValue;
+    }
+
     public override void OnNetworkSpawn()
     {
         paralysisDuration = NetworkVariableManager.Instance.GetDifficultyProperties().ParalyzeDuration;
@@ -73,9 +87,15 @@ public class FlashlightLogic : NetworkBehaviour
         canFlash = true;
     }
 
+    [ServerRpc]
+    private void ToggleFlashlightServerRpc(bool state)
+    {
+        isFlashlightOn.Value = state;
+    }
+
     [ClientRpc]
     private void FlashLightEffectClientRpc(bool state)
     {
-        flashlightLight.enabled = state;
+        ToggleFlashlightServerRpc(state);
     }
 }

@@ -20,9 +20,9 @@ TagManager:
   - Boundary
   - Wall
   - Ghosts
-  - 
-  - 
-  - 
+  - Grabbables
+  - Ground
+  - Obstacle
   - 
   - 
   - 

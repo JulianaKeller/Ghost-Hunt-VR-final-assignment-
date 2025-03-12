@@ -721,6 +721,7 @@ MonoBehaviour:
     m_Reference: {fileID: 5753362011061742477, guid: d86920191e7b0cb41a4a7e1ff8fc9a2e, type: 3}
   handCollider: {fileID: 2774642562534127290}
   handRigidbody: {fileID: 6274500903751221850}
+  controller: {fileID: 2679059498078427805}
 --- !u!1 &4833818313043802723
 GameObject:
   m_ObjectHideFlags: 0
@@ -1123,7 +1124,7 @@ Camera:
   m_Depth: 0
   m_CullingMask:
     serializedVersion: 2
-    m_Bits: 951
+    m_Bits: 8119
   m_RenderingPath: -1
   m_TargetTexture: {fileID: 0}
   m_TargetDisplay: 0
@@ -1440,7 +1441,7 @@ MonoBehaviour:
   - {fileID: 7216047633375872283}
   - {fileID: 7216047633375872282}
   - {fileID: 7216047633976425184}
-  - {fileID: 0}
+  - {fileID: 7216047633976425184}
   - {fileID: 0}
   - {fileID: 0}
   - {fileID: 0}
@@ -1551,12 +1552,16 @@ MonoBehaviour:
   steeringSpeed: 10
   maxAcceleration: 2
   maxVelocity: 5
-  rotationSpeed: 3
+  rotationSpeed: 39.3
   snapRotation: 0
   snapAngles: 30
   groundLayerMask:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 2048
+  boundaryLayerMask:
+    serializedVersion: 2
+    m_Bits: 4224
+  boundaryCheckDistance: 0.2
 --- !u!114 &3164204432371295358
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1835,8 +1840,12 @@ PrefabInstance:
       value: 2956674514
       objectReference: {fileID: 0}
     - target: {fileID: 5825527903967830892, guid: 6247120140379db409da02def1bb4f1c, type: 3}
-      propertyPath: m_Parameters.widthMultiplier
+      propertyPath: m_Loop
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5825527903967830892, guid: 6247120140379db409da02def1bb4f1c, type: 3}
+      propertyPath: m_Parameters.widthMultiplier
+      value: 0.2
       objectReference: {fileID: 0}
     - target: {fileID: 7711621367587310596, guid: 6247120140379db409da02def1bb4f1c, type: 3}
       propertyPath: m_LocalPosition.x
@@ -1958,10 +1967,10 @@ BoxCollider:
   m_Material: {fileID: 0}
   m_IncludeLayers:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 1024
   m_ExcludeLayers:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 7167
   m_LayerOverridePriority: 0
   m_IsTrigger: 1
   m_ProvidesContacts: 0
@@ -2285,10 +2294,10 @@ BoxCollider:
   m_Material: {fileID: 0}
   m_IncludeLayers:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 1024
   m_ExcludeLayers:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 7167
   m_LayerOverridePriority: 0
   m_IsTrigger: 1
   m_ProvidesContacts: 0

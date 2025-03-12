@@ -22,9 +22,14 @@ public class SkyboxController : MonoBehaviour
         int currentTime = NetworkVariableManager.Instance.GetGameTime();
         int gameTimeLimit = NetworkVariableManager.Instance.GetGameTimeLimit();
 
-        exposure = Exposure(currentTime);
-
-        //Debug.Log("Exposure: " + exposure);
+        if (currentTime >= gameTimeLimit)
+        {
+            exposure = endExposure;
+        }
+        else
+        {
+            exposure = Exposure(currentTime);
+        }
 
         //Apply exposure to skybox
         skyboxMat.SetFloat("_Exposure", exposure);

@@ -1,3 +1,72 @@
 Please reference like this:
 
 SampleObject.obj - https://sampleobjects.com
+
+Audio:
+
+gameEndMusic (unchanged) - https://freesound.org/people/dominictreis/sounds/488963/ 
+
+vacuumNoise (unchanged) - 
+
+vacuumSuckedInSound (unchanged) - https://pixabay.com/sound-effects/fx-reversed-vacuum-cinematic-riser-sound-effect-255508/
+
+environmental_sounds (unchanged) - 
+
+bg_music (unchanged) - https://freesound.org/people/Audio_Dread/sounds/528045/
+https://freesound.org/people/mycompasstv/sounds/787947/
+
+spectreSound (sounds cut) - https://freesound.org/people/Patrick_Corra/sounds/645676/
+
+morningBirds (unchanged) - https://freesound.org/people/dedindi/sounds/522058/
+
+laserSound (unchanged) - https://freesound.org/people/univ_lyon3/sounds/611866/
+
+captureBallSuckedInSound (sounds cut) - https://freesound.org/people/beman87/sounds/162841/
+
+ghost-whispers-01, ghost-whispers-02, ghost-whispers-03 (split into separate audio files) - https://pixabay.com/sound-effects/ghost-whispers-6030/
+
+3D Models:
+
+PlasmaGunLevel3Yellow (no changes made) - https://assetstore.unity.com/packages/3d/props/guns/low-poly-sci-fi-weapons-pack-free-sample-285646
+
+Flashlight (Asset includes textures starting with "FlashLight_..." and materials starting with "FlashLight...", no changes made) - https://assetstore.unity.com/packages/3d/props/electronics/flashlight-18972
+
+[Ghost](3D model remodelled in Blender to T-Pose, materials changed) - https://sketchfab.com/3d-models/low-poly-ghost-character-4e6b7329c21b400e806d078dd0969212
+
+[VacuumGun based on LaserGunLevel3Blue] (model changed in Blender to include ghost container, material changed) - https://assetstore.unity.com/packages/3d/props/guns/low-poly-sci-fi-weapons-pack-free-sample-285646
+
+[Environment including GameObjects in "Environment" prefab and their materials and textures/sprites] - https://assetstore.unity.com/packages/3d/environments/landscapes/low-poly-woods-232818
+
+Shadergraph Package:
+
+Built-In z3y Package (Fixes problem where custom shadergraphs targeting the Built-In Renderpipeline only appear on one eye in VR) - https://github.com/z3y/ShaderGraphVRC
+
+Fonts:
+
+Crused Marrie - https://www.1001fonts.com/crused-marrie-font.html
+
+NightmarePills-BV2w - https://www.fontspace.com/nightmare-pills-font-f30706
+
+Ghost Animations:
+
+Drunk Walk - www.mixamo.com (Drunk Walk)
+
+Block - www.mixamo.com (Standing Block Idle)
+
+Drunk Idle - www.mixamo.com (Drunk Idle)
+
+Dying - www.mixamo.com (Dying)
+
+Flair - www.mixamo.com (Flair)
+
+Injured Walk Left Turn - www.mixamo.com (Injured Walk Left Turn)
+
+Drunk Turn Left - www.mixamo.com (Drunk Turn Left)
+
+Drunk Turn Right - www.mixamo.com (Drunk Turn Right)
+
+Zombie Reaction Hit - www.mixamo.com (Zombie Reaction Hit)
+
+Standing Looking - www.mixamo.com (Standing Idle 02)
+
+Walking Variant 1 - www.mixamo.com

@@ -5,7 +5,8 @@ using Unity.Netcode;
 
 public class CaptureBallLogic : NetworkBehaviour
 {
-    public float hoverTimeAfterHit = 2f;
+    public float hoverTimeAfterHit = 3f;
+    public float ghostCaptureAnimationDuration = 3f;
     public LayerMask ghostLayer;
 
     private Rigidbody rb;
@@ -33,18 +34,18 @@ public class CaptureBallLogic : NetworkBehaviour
         hasBeenThrown = true;
     }
 
-    void OnCollisionEnter(Collision collision)
+    void OnTriggerEnter(Collider other)
     {
         if (hasCaptured) return; // Prevent multiple captures
 
-        if (collision.gameObject.CompareTag("Ghost"))
+        if (other.gameObject.CompareTag("Ghost"))
         {
             Debug.Log("CaptureBall collided with a ghost");
-            GameObject ghost = collision.gameObject;
+            GameObject ghost = other.gameObject;
 
-            if (ghost != null && ghost.GetComponent<GeistBewegung>().IsParalyzed()) // Only capture if paralyzed
+            if (ghost != null && ghost.GetComponent<GeistBewegung>().IsStunned()) // Only capture if paralyzed
             {
-                Debug.Log("Ghost is paralyized. CaptureBall is capturing ghost...");
+                Debug.Log("Ghost is stunned. CaptureBall is capturing ghost...");
                 CaptureGhost(ghost);
             }
         }
@@ -55,7 +56,7 @@ public class CaptureBallLogic : NetworkBehaviour
 
         hasCaptured = true;
 
-        NetworkVariableManager.Instance.IncrementCaughtGhosts();
+        //NetworkVariableManager.Instance.IncrementCaughtGhosts();
 
         // Stop ball movement and make it hover
         rb.velocity = Vector3.zero;
@@ -63,24 +64,70 @@ public class CaptureBallLogic : NetworkBehaviour
         rb.isKinematic = true;
         rb.useGravity = false;
 
-        //Call Capture on ghost
         GeistBewegung geistScript = ghost.GetComponent<GeistBewegung>();
         if (geistScript != null)
         {
-            geistScript.Capture();
+            geistScript.Capture(); //Increments Captured Ghosts count network variable
         }
+
+
+        StartCoroutine(AnimateGhostCapture(ghost));
 
         // Destroy the ball after a delay of hoverTimeAfterHit
         if (IsServer)
         {
-            StartCoroutine(DespawnGhostAfterDelay(ghost));
+            GhostSpawner.RequestDespawnGhost(ghost);
+            StartCoroutine(DespawnCaptureBallAfterDelay());
         }
     }
 
-    IEnumerator DespawnGhostAfterDelay(GameObject ghost)
+    IEnumerator AnimateGhostCapture(GameObject ghost)
+    {
+        //Play ghost capture sounds
+        AudioSource[] audioSources = transform.GetComponents<AudioSource>();
+        foreach (AudioSource audioSource in audioSources)
+        {
+            if (audioSource != null)
+            {
+                audioSource.Play();
+            }
+            else
+            {
+                Debug.LogWarning("AudioSource component is missing!");
+            }
+        }
+
+        float elapsedTime = 0f;
+        Vector3 originalScale = ghost.transform.localScale;
+        Vector3 originalPosition = ghost.transform.position;
+        Vector3 targetPosition = transform.position; // Position of the capture ball
+
+        while (elapsedTime < ghostCaptureAnimationDuration)
+        {
+            // Animate position (move towards capture ball)
+            ghost.transform.position = Vector3.Lerp(originalPosition, targetPosition, elapsedTime / ghostCaptureAnimationDuration);
+
+            // Animate scale (shrink to 0)
+            ghost.transform.localScale = Vector3.Lerp(originalScale, Vector3.zero, elapsedTime / ghostCaptureAnimationDuration);
+
+            elapsedTime += Time.deltaTime;
+            yield return null;
+        }
+
+        // Ensure ghost has completely shrunk and moved to the capture ball's position
+        ghost.transform.position = targetPosition;
+        ghost.transform.localScale = Vector3.zero;
+    }
+
+    IEnumerator DespawnCaptureBallAfterDelay()
     {
         yield return new WaitForSeconds(hoverTimeAfterHit);
 
-        GhostSpawner.RequestDespawnGhost(ghost);
+        NetworkObject ballNetworkObject = transform.GetComponent<NetworkObject>();
+        if (ballNetworkObject != null && ballNetworkObject.IsSpawned)
+        {
+            ballNetworkObject.Despawn();
+        }
+        Destroy(this); // Ensure the object is also destroyed locally
     }
 }

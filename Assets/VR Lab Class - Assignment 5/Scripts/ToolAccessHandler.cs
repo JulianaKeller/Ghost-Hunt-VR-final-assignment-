@@ -7,38 +7,10 @@ public class ToolAccessHandler : NetworkBehaviour
 {
     #region Member Variables
 
-    //public GameObject toolsCollection;
-
-    //private NetworkList<bool> isInUse;
     private Dictionary<int, ulong> toolOwnership = new Dictionary<int, ulong>();
     private toolsManager _toolsManager;
 
     #endregion
-
-    /*private void OnNetworkSpawn()
-    {
-        base.OnNetworkSpawn(); // Always call the base method first
-
-        isInUse = new NetworkList<bool>(new List<bool>(), NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
-
-
-        //Fill the list with true values for each tool:
-        if (IsServer)
-        {
-            if (toolsCollection != null)
-            {
-                int children = toolsCollection.transform.childCount;
-                for (int i = 0; i < children; ++i)
-                {
-                    isInUse.Add(true);
-                }
-            }
-            else
-            {
-                Debug.Log("toolsCollection is Null!");
-            }
-        }
-    }*/
 
     private void Start()
     {
@@ -49,24 +21,6 @@ public class ToolAccessHandler : NetworkBehaviour
 
     public bool RequestAccess(int toolIndex, ulong playerId)
     {
-        /*if (!IsServer) return false; // Only server can modify NetworkList
-        if (index == 0)
-        {
-            return true;
-        }
-        else if (index >= isInUse.Count || index < 0)
-        {
-            return false;
-        }
-        else {
-            if(isInUse[index]){
-                return false;
-            }
-            else{
-                isInUse[index] = true;
-                return true;
-            }
-        }*/
 
         if (IsServer)
         {
@@ -76,7 +30,19 @@ public class ToolAccessHandler : NetworkBehaviour
             }
             if (toolOwnership.ContainsKey(toolIndex))
             {
+                if (toolOwnership[toolIndex] == playerId)
+                    return true; // Already owns it
                 return false; // Tool is in use
+            }
+
+            // Release previous tool if player had one
+            foreach (var entry in toolOwnership)
+            {
+                if (entry.Value == playerId)
+                {
+                    toolOwnership.Remove(entry.Key);
+                    break;
+                }
             }
 
             toolOwnership[toolIndex] = playerId;
@@ -87,8 +53,6 @@ public class ToolAccessHandler : NetworkBehaviour
 
     public void Release(int toolIndex, ulong playerId)
     {
-        /*if (!IsServer) return; // Only server can modify NetworkList
-        isInUse[index] = false;*/
 
         if (IsServer && toolOwnership.ContainsKey(toolIndex) && toolOwnership[toolIndex] == playerId)
         {
@@ -111,7 +75,6 @@ public class ToolAccessHandler : NetworkBehaviour
         {
             GameObject player = NetworkManager.Singleton.ConnectedClients[playerId].PlayerObject.gameObject;
 
-            // Find the toolsManager script on that player
             toolsManager playerToolsManager = player.GetComponent<toolsManager>();
 
             if (playerToolsManager != null)

@@ -14,6 +14,15 @@ public class VirtualHand : NetworkBehaviour
     private Rigidbody grabbedRb;
     private Matrix4x4 offsetMatrix;
 
+    //Velocity calculations
+    public Transform controller;
+    private Vector3 previousPosition;
+    private Vector3 handVelocity;
+    private Vector3 angularVelocity;
+    private float velocityThreshold = 0.01f;
+    private Vector3 smoothedVelocity;
+    private float smoothingFactor = 0.1f;
+
     private bool canGrab //can only grab when it is the player's own tool, can only grab the captureball
     {
         get
@@ -50,12 +59,27 @@ public class VirtualHand : NetworkBehaviour
 
     private void Update()
     {
+        calculateHandVelocity();
         HandleGrab();
     }
 
     #endregion
 
     #region Custom Methods
+
+    private void calculateHandVelocity()
+    {
+        handVelocity = (controller.position - previousPosition) / Time.deltaTime;
+        previousPosition = controller.position;
+
+        if (handVelocity.magnitude < velocityThreshold)
+        {
+            handVelocity = Vector3.zero;  // Don't apply velocity if too small
+        }
+
+        // Smooth the velocity
+        smoothedVelocity = Vector3.Lerp(smoothedVelocity, handVelocity, smoothingFactor);
+    }
 
     private void HandleGrab()
     {
@@ -108,10 +132,13 @@ public class VirtualHand : NetworkBehaviour
 
                 grabbedObject.transform.position = newTransform.GetColumn(3);
                 grabbedObject.transform.rotation = newTransform.rotation;
+
             }
         }
         else if (grabAction.action.WasReleasedThisFrame()) //inherit velocity here
         {
+            
+
             Debug.Log("GrabbedAction was released...");
             if(grabbedObject != null)
             {
@@ -122,12 +149,15 @@ public class VirtualHand : NetworkBehaviour
 
                     if (IsOwner) // Only the server should apply physics updates
                     {
-                        grabbedObject.GetComponent<CaptureBallLogic>().Throw();
-                        ThrowObjectServerRpc(grabbedObject.GetComponent<NetworkObject>(), handRigidbody.velocity, handRigidbody.angularVelocity);
-                    }
+                        // Apply velocity locally first to avoid physics issues
+                        grabbedRb.velocity = 2 * smoothedVelocity;
+                        //grabbedRb.angularVelocity = handRigidbody.angularVelocity;
 
-                    Debug.Log("Reenabled physics for " + grabbedObject);
-                    Debug.Log("Objects Velocity: " + grabbedRb.velocity);
+                        Debug.Log("Hands Velocity: " + handVelocity);
+                        Debug.Log("Objects Velocity: " + grabbedRb.velocity);
+
+                        grabbedObject.GetComponent<CaptureBallLogic>().Throw();
+                    }
                 }
             }
             else
@@ -158,7 +188,7 @@ public class VirtualHand : NetworkBehaviour
 
     #endregion
 
-    #region Server Networking
+    /*#region Server Networking
 
     [ServerRpc(RequireOwnership = false)]
     private void ThrowObjectServerRpc(NetworkObjectReference objectRef, Vector3 velocity, Vector3 angularVelocity)
@@ -168,11 +198,13 @@ public class VirtualHand : NetworkBehaviour
             Rigidbody rb = obj.GetComponent<Rigidbody>();
             if (rb != null)
             {
-                rb.velocity = velocity;
-                rb.angularVelocity = angularVelocity;
+                rb.isKinematic = false; // Ensure kinematic is disabled before applying physics
+                rb.useGravity = true;
+                //rb.velocity = velocity;
+                //rb.angularVelocity = angularVelocity;
             }
         }
     }
 
-    #endregion
+    #endregion*/
 }

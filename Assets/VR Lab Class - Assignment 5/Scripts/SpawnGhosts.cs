@@ -21,6 +21,7 @@ public class SpawnGhosts : NetworkBehaviour
 
     private int minGhostCount = 3;
     public float spawnInterval = 5f;
+    private bool spawningEnabled = true;
 
     private List<GameObject> activeGhosts = new List<GameObject>();
     private Transform[] spawnPoints;
@@ -62,7 +63,7 @@ public class SpawnGhosts : NetworkBehaviour
 
     IEnumerator SpawnRoutine()
     {
-        while (true)
+        while (true && spawningEnabled)
         {
             yield return new WaitForSeconds(spawnInterval);
             if (IsServer) // Ensure only the server spawns
@@ -119,6 +120,27 @@ public class SpawnGhosts : NetworkBehaviour
                 netObj.Despawn(true);
                 activeGhosts.Remove(obj);
             }
+        }
+    }
+
+    public void DespawnAllGhostAndStopSpawning()
+    {
+        if (IsServer)
+        {
+            // Create a copy of the list to avoid modifying it while iterating
+            List<GameObject> ghostsToDespawn = new List<GameObject>(activeGhosts);
+
+            foreach (GameObject ghost in ghostsToDespawn)
+            {
+                NetworkObject netObj = ghost.GetComponent<NetworkObject>();
+                if (netObj != null && netObj.IsSpawned)
+                {
+                    netObj.Despawn(true);
+                }
+            }
+
+            activeGhosts.Clear(); // Clear the original list after iteration
+            spawningEnabled = false;
         }
     }
 

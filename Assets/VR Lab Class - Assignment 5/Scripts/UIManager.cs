@@ -23,16 +23,22 @@ public class UIManager : MonoBehaviour
     // Update is called once per frame
     private void updateTimeText(int oldValue, int newValue)
     {
-        int currentTime = newValue;
-        int gameTimeLimit = NetworkVariableManager.Instance.GetGameTimeLimit();
-        int timeLeft = gameTimeLimit - currentTime;
+        if(timeText != null)
+        {
+            int currentTime = newValue;
+            int gameTimeLimit = NetworkVariableManager.Instance.GetGameTimeLimit();
+            int timeLeft = gameTimeLimit - currentTime;
 
-        timeText.text = timeLeft.ToString();
+            timeText.text = timeLeft.ToString();
+        }
     }
 
     private void updateGhostCount(int oldValue, int newValue)
     {
-        ghostCountText.text = newValue.ToString();
+        if (ghostCountText != null)
+        {
+            ghostCountText.text = newValue.ToString();
+        }
     }
 
     private void OnDestroy()

@@ -4,11 +4,12 @@ using UnityEngine;
 
 public class SkyboxController : MonoBehaviour
 {
+
     public float startExposure = 0.2f;
     public float endExposure = 5f;
 
     private Material skyboxMat;
-    // Start is called before the first frame update
+
     void Start()
     {
         skyboxMat = RenderSettings.skybox;
@@ -48,5 +49,10 @@ public class SkyboxController : MonoBehaviour
         //Debug.Log("New exposure value: " + (a * Mathf.Pow(b, t)));
 
         return (a * Mathf.Pow(b, t));
+    }
+
+    public void ResetExposure()
+    {
+        skyboxMat.SetFloat("_Exposure", startExposure);
     }
 }

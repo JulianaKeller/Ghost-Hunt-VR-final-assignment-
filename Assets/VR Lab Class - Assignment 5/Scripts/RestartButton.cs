@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Unity.Netcode;
 
-public class DifficultyButton : MonoBehaviour
+public class RestartButton : MonoBehaviour
 {
     public int difficultyLevel;
     public float pressDepth = 0.02f;
@@ -15,24 +15,25 @@ public class DifficultyButton : MonoBehaviour
         originalPosition = transform.position;
     }
 
+    public void RestartGame()
+    {
+        //Restart Game
+        GameTimeManager.Instance.RestartGame();
+        StartCoroutine(PressAnimation());
+    }
+
     void OnTriggerEnter(Collider other)
     {
         if (other.CompareTag("Hand"))
         {
             Debug.Log("Button Pressed!");
-            SetDifficulty();
+            RestartGame();
         }
-    }
-
-    public void SetDifficulty()
-    {
-        NetworkVariableManager.Instance.SetGameDifficulty(difficultyLevel);
-        StartCoroutine(PressAnimation());
     }
 
     private IEnumerator PressAnimation()
     {
-        Vector3 pressedPosition = originalPosition - new Vector3(pressDepth, 0, 0);
+        Vector3 pressedPosition = originalPosition - new Vector3(0, pressDepth, 0);
 
         // Move down
         float elapsedTime = 0f;

@@ -22,6 +22,7 @@ public class SpawnGhosts : NetworkBehaviour
     private int minGhostCount = 3;
     public float spawnInterval = 5f;
     private bool spawningEnabled = true;
+    private Coroutine spawnRoutine;
 
     private List<GameObject> activeGhosts = new List<GameObject>();
     private Transform[] spawnPoints;
@@ -53,7 +54,7 @@ public class SpawnGhosts : NetworkBehaviour
         if (IsServer) // Ensure this only runs on the server
         {
             Debug.Log("IsServer and starting SpawnRoutine now...");
-            StartCoroutine(SpawnRoutine());
+            spawnRoutine = StartCoroutine(SpawnRoutine());
         }
         else
         {
@@ -159,6 +160,21 @@ public class SpawnGhosts : NetworkBehaviour
             {
                 instanceNetworkObject.Spawn();
                 activeGhosts.Add(newGhost);
+            }
+        }
+    }
+
+    public void EnableSpawning()
+    {
+        if (!spawningEnabled)
+        {
+            if (IsServer)
+            {
+                spawningEnabled = true;
+                if (spawnRoutine == null)
+                {
+                    spawnRoutine = StartCoroutine(SpawnRoutine());
+                }
             }
         }
     }

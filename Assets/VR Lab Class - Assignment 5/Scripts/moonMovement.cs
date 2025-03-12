@@ -29,4 +29,10 @@ public class moonMovement : NetworkBehaviour
         //Smooth movement:
         transform.position = Vector3.SmoothDamp(transform.position, targetPosition, ref currentVelocity, smoothTime);
     }
+
+    public void ResetMoonPosition()
+    {
+        transform.position = startPosition;
+        currentVelocity = Vector3.zero;
+    }
 }

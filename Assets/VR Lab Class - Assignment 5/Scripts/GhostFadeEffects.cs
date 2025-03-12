@@ -39,6 +39,8 @@ public class GhostFadeEffects : NetworkBehaviour
     public override void OnNetworkSpawn()
     {
         minVisibleDuration = NetworkVariableManager.Instance.GetDifficultyProperties().GhostMinVisibilityDuration;
+        particleEmissionRate.Value = maxParticleEmissionRate;
+        fadeAlpha.Value = 1f;
 
         ghostRenderer = GetComponentInChildren<SkinnedMeshRenderer>();
         ghostParticles = GetComponentInChildren<ParticleSystem>();

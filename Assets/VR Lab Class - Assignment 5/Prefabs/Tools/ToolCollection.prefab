@@ -837,7 +837,7 @@ AudioSource:
   m_PlayOnAwake: 0
   m_Volume: 1
   m_Pitch: 1
-  Loop: 0
+  Loop: 1
   Mute: 0
   Spatialize: 0
   SpatializePostEffects: 0
@@ -1036,8 +1036,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   laserRange: 15
-  maxDuration: 0.2
-  rechargeTime: 5
+  laserDechargeRate: 1
+  laserRechargeRate: 1
+  maxLaserGunCharge: 5
   triggerAction:
     m_UseReference: 1
     m_Action:

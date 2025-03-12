@@ -70,6 +70,10 @@ public class CaptureBallLogic : NetworkBehaviour
             geistScript.Capture(); //Increments Captured Ghosts count network variable
         }
 
+        if (IsOwner)
+        {
+            SetGhostCapturedServerRpc(ghost.GetComponent<NetworkObject>());
+        }
 
         StartCoroutine(AnimateGhostCapture(ghost));
 
@@ -83,6 +87,9 @@ public class CaptureBallLogic : NetworkBehaviour
 
     IEnumerator AnimateGhostCapture(GameObject ghost)
     {
+        //Wait for hit animation to play
+        yield return new WaitForSeconds(1.2f);
+
         //Play ghost capture sounds
         AudioSource[] audioSources = transform.GetComponents<AudioSource>();
         foreach (AudioSource audioSource in audioSources)
@@ -129,5 +136,33 @@ public class CaptureBallLogic : NetworkBehaviour
             ballNetworkObject.Despawn();
         }
         Destroy(this); // Ensure the object is also destroyed locally
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    void SetGhostCapturedServerRpc(NetworkObjectReference ghostObjectRef)
+    {
+        if (ghostObjectRef.TryGet(out NetworkObject ghostNetworkObject))
+        {
+            Animator ghostAnimator = ghostNetworkObject.gameObject.GetComponent<Animator>();
+            if (ghostAnimator != null)
+            {
+                ghostAnimator.SetBool("isHit", true);
+            }
+        }
+
+        SetGhostCapturedClientRpc(ghostObjectRef);
+    }
+
+    [ClientRpc]
+    void SetGhostCapturedClientRpc(NetworkObjectReference ghostObjectRef)
+    {
+        if (ghostObjectRef.TryGet(out NetworkObject ghostNetworkObject))
+        {
+            Animator ghostAnimator = ghostNetworkObject.gameObject.GetComponent<Animator>();
+            if (ghostAnimator != null)
+            {
+                ghostAnimator.SetBool("isHit", true);
+            }
+        }
     }
 }

@@ -150,7 +150,7 @@ public class VirtualHand : NetworkBehaviour
                     if (IsOwner) // Only the server should apply physics updates
                     {
                         // Apply velocity locally first to avoid physics issues
-                        grabbedRb.velocity = 2 * smoothedVelocity;
+                        grabbedRb.velocity = 3 * smoothedVelocity;
                         //grabbedRb.angularVelocity = handRigidbody.angularVelocity;
 
                         Debug.Log("Hands Velocity: " + handVelocity);

@@ -77,8 +77,14 @@ public class GameTimeManager : NetworkBehaviour
         if (gameEndMusic != null) gameEndMusic.Play();
     }
 
-    public IEnumerator RestartGame()
+    public void RestartGame()
     {
+        StartCoroutine(Restart());
+    }
+
+    public IEnumerator Restart()
+    {
+        Debug.Log("Restarting Game...");
         NetworkVariableManager.Instance.SetCaughtGhostsCount(0);
         NetworkVariableManager.Instance.SetGameTime(0);
 

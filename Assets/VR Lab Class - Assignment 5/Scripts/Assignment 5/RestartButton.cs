@@ -24,6 +24,7 @@ public class RestartButton : MonoBehaviour
 
     void OnTriggerEnter(Collider other)
     {
+        Debug.Log("Restart Button hit");
         if (other.CompareTag("Hand"))
         {
             Debug.Log("Button Pressed!");

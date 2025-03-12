@@ -23,7 +23,7 @@ public class PlasmaGunLogic : NetworkBehaviour
     public LineRenderer plasmaLine;
     public AudioSource laserAudioSource;
 
-    private bool enabled = false;
+    private bool gunIsActive = false;
     private bool isFiring = false;
     private bool isRecharging = false;
     private Transform targetGhost = null;
@@ -32,17 +32,25 @@ public class PlasmaGunLogic : NetworkBehaviour
     private Coroutine rechargeCoroutine;
     private Coroutine dechargeCoroutine;
 
-    // Network Variables to sync laser line positions
-    private NetworkVariable<Vector3> laserStartPos = new NetworkVariable<Vector3>();
-    private NetworkVariable<Vector3> laserEndPos = new NetworkVariable<Vector3>();
-    private NetworkVariable<bool> laserEnabled = new NetworkVariable<bool>(false);
-    private NetworkVariable<bool> plasmaEnabled = new NetworkVariable<bool>(false);
+    // Network Variables to sync laser line positions and state
+    private NetworkVariable<Vector3> laserStartPos =
+        new NetworkVariable<Vector3>(Vector3.zero, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
 
-    
+    private NetworkVariable<Vector3> laserEndPos =
+        new NetworkVariable<Vector3>(Vector3.zero, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+
+    private NetworkVariable<bool> laserEnabled =
+        new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+
+    private NetworkVariable<bool> plasmaEnabled =
+        new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+
+
+
 
     void OnEnable()
     {
-        enabled = true;
+        gunIsActive = true;
 
         if (rechargeCoroutine == null)
         {
@@ -63,7 +71,7 @@ public class PlasmaGunLogic : NetworkBehaviour
         isRecharging = false;
         laserEnabled.Value = false;
         plasmaEnabled.Value = false;
-        enabled = false;
+        gunIsActive = false;
         rechargeCoroutine = null;
         dechargeCoroutine = null;
     }
@@ -75,13 +83,8 @@ public class PlasmaGunLogic : NetworkBehaviour
         HideLaserLine();
         HidePlasmaLine();
 
-        if (IsClient)
-        {
-            SyncLaserStateClientRpc(laserEnabled.Value, plasmaEnabled.Value);
-            SyncLaserLineClientRpc(laserStartPos.Value, laserEndPos.Value);
-        }
-
         maxLaserGunCharge = NetworkVariableManager.Instance.GetDifficultyProperties().LaserGunMaxCharge;
+        laserGunCharge = maxLaserGunCharge;
         laserDechargeRate = NetworkVariableManager.Instance.GetDifficultyProperties().LaserGunDechargeRate;
         laserRechargeRate = NetworkVariableManager.Instance.GetDifficultyProperties().LaserGunRechargeRate;
     }
@@ -91,7 +94,29 @@ public class PlasmaGunLogic : NetworkBehaviour
         laserEnabled.OnValueChanged += (oldValue, newValue) => laserLine.enabled = newValue;
         plasmaEnabled.OnValueChanged += (oldValue, newValue) => plasmaLine.enabled = newValue;
 
+        laserStartPos.OnValueChanged += (oldValue, newValue) =>
+        {
+            laserLine.SetPosition(0, newValue);
+            plasmaLine.SetPosition(0, newValue);
+        };
+
+        laserEndPos.OnValueChanged += (oldValue, newValue) =>
+        {
+            laserLine.SetPosition(1, newValue);
+            plasmaLine.SetPosition(1, newValue);
+        };
+
+        laserEnabled.OnValueChanged += (oldValue, newValue) =>
+        {
+            if (newValue) PlayLaserSound();
+            else StopLaserSound();
+        };
+
+        HideLaserLine();
+        HidePlasmaLine();
+
         maxLaserGunCharge = NetworkVariableManager.Instance.GetDifficultyProperties().LaserGunMaxCharge;
+        laserGunCharge = maxLaserGunCharge;
         laserDechargeRate = NetworkVariableManager.Instance.GetDifficultyProperties().LaserGunDechargeRate;
         laserRechargeRate = NetworkVariableManager.Instance.GetDifficultyProperties().LaserGunRechargeRate;
 
@@ -109,15 +134,8 @@ public class PlasmaGunLogic : NetworkBehaviour
     {
         if (!IsOwner) return;
 
-        if (enabled)
+        if (gunIsActive)
         {
-            if (isRecharging)
-            {
-                HideLaserLine();
-                HidePlasmaLine();
-                return;
-            }
-
             if (!isFiring && triggerAction.action.IsPressed() && laserGunCharge > 0)
             {
                 isFiring = true;
@@ -126,12 +144,6 @@ public class PlasmaGunLogic : NetworkBehaviour
                 laserDechargeRate = NetworkVariableManager.Instance.GetDifficultyProperties().LaserGunDechargeRate;
                 laserRechargeRate = NetworkVariableManager.Instance.GetDifficultyProperties().LaserGunRechargeRate;
                 StartFiring();
-            }
-            else if (triggerAction.action.WasReleasedThisFrame())
-            {
-                isRecharging = true;
-                isFiring = false;
-                StopFiring();
             }
             if (triggerAction.action.IsPressed() && laserGunCharge > 0)
             {
@@ -152,40 +164,48 @@ public class PlasmaGunLogic : NetworkBehaviour
     void HideLaserLine()
     {
         laserLine.enabled = false;
-        SyncLaserStateClientRpc(false, false);
-    }
-
-    private void StopLaserAudio()
-    {
-        if (!IsServer) return;
-        StopLaserAudioClientRpc();
-    }
-
-    private void PlayLaserAudio()
-    {
-        if (!IsServer) return;
-        PlayLaserAudioClientRpc();
+        if (IsServer) laserEnabled.Value = false;
     }
 
     void HidePlasmaLine()
     {
         plasmaLine.enabled = false;
-        SyncLaserStateClientRpc(false, false);
+        if (IsServer) plasmaEnabled.Value = false;
+    }
+
+    void showLaserLine()
+    {
+        laserLine.enabled = true;
+        if (IsServer) laserEnabled.Value = true;
+    }
+
+    void showPlasmaLine()
+    {
+        plasmaLine.enabled = true;
+        if (IsServer) plasmaEnabled.Value = true;
+    }
+
+    private void PlayLaserSound()
+    {
+        if (laserAudioSource != null && !laserAudioSource.isPlaying)
+        {
+            laserAudioSource.Play();
+            laserAudioSource.loop = true;
+        }
+    }
+
+    private void StopLaserSound()
+    {
+        if (laserAudioSource != null && laserAudioSource.isPlaying)
+        {
+            laserAudioSource.Stop();
+        }
     }
 
     void StartFiring()
     {
-        laserLine.enabled = true; //ToDo Networking
+        showLaserLine();
         HidePlasmaLine();
-
-        PlayLaserAudio();
-
-        if (IsServer)
-        {
-            laserEnabled.Value = true;
-            plasmaEnabled.Value = false;
-            SyncLaserStateClientRpc(laserEnabled.Value, plasmaEnabled.Value);
-        }
     }
 
     void StopFiring()
@@ -193,19 +213,11 @@ public class PlasmaGunLogic : NetworkBehaviour
         HideLaserLine();
         HidePlasmaLine();
 
-        if (IsServer)
-        {
-            laserEnabled.Value = false;
-            plasmaEnabled.Value = false;
-            SyncLaserStateClientRpc(laserEnabled.Value, plasmaEnabled.Value);
-        }
-
         if (targetGhost)
         {
             targetGhost.GetComponent<GeistBewegung>().UnstunLaserServerRpc();
             targetGhost = null;
         }
-        StopLaserAudio();
     }
 
     void UpdateLaser()
@@ -217,21 +229,24 @@ public class PlasmaGunLogic : NetworkBehaviour
         laserLine.SetPosition(0, laserStart);
         plasmaLine.SetPosition(0, laserStart);
 
+        if (IsServer)
+        {
+            laserStartPos.Value = laserLine.GetPosition(0);
+        }
+
         if (Physics.Raycast(laserStart, laserDirection, out hit, laserRange, ghostLayer))
         {
             laserLine.SetPosition(1, hit.point);
             plasmaLine.SetPosition(1, hit.point);
 
-            // Plasma Linie aktivieren, normalen Laser ausblenden
-            HideLaserLine();
-            plasmaLine.enabled = true;
-
             if (IsServer)
             {
-                laserEnabled.Value = false;
-                plasmaEnabled.Value = true;
-                SyncLaserStateClientRpc(laserEnabled.Value, plasmaEnabled.Value);
+                laserEndPos.Value = laserLine.GetPosition(1);
             }
+
+            // Plasma Linie aktivieren, normalen Laser ausblenden
+            HideLaserLine();
+            showPlasmaLine();
 
             if (targetGhost == null)
             {
@@ -246,24 +261,15 @@ public class PlasmaGunLogic : NetworkBehaviour
                 targetGhost.GetComponent<GeistBewegung>().UnstunLaserServerRpc();
                 targetGhost = null;
             }
-            laserLine.enabled = true;
+            showLaserLine();
             HidePlasmaLine();
-
-            if (IsServer)
-            {
-                laserEnabled.Value = true;
-                plasmaEnabled.Value = false;
-                SyncLaserStateClientRpc(laserEnabled.Value, plasmaEnabled.Value);
-            }
 
             laserLine.SetPosition(1, laserStart + laserDirection * laserRange);
         }
 
         if (IsServer)
         {
-            laserStartPos.Value = laserLine.GetPosition(0);
             laserEndPos.Value = laserLine.GetPosition(1);
-            SyncLaserLineClientRpc(laserStartPos.Value, laserEndPos.Value);
         }
     }
 
@@ -287,48 +293,11 @@ public class PlasmaGunLogic : NetworkBehaviour
             if (isFiring && !isRecharging && laserGunCharge > 0)
             {
                 laserGunCharge -= laserDechargeRate;
+                Debug.Log("Decharge Rate: " + laserDechargeRate);
+                Debug.Log("Max Charge: " + maxLaserGunCharge);
                 Debug.Log("Laser charge decreased to " + laserGunCharge);
             }
             yield return new WaitForSeconds(1f);
         }
     }
-
-    #region RCPs
-
-    [ClientRpc]
-    private void SyncLaserLineClientRpc(Vector3 start, Vector3 end)
-    {
-        laserLine.SetPosition(0, start);
-        laserLine.SetPosition(1, end);
-        plasmaLine.SetPosition(0, start);
-        plasmaLine.SetPosition(1, end);
-    }
-
-    [ClientRpc]
-    private void SyncLaserStateClientRpc(bool laserActive, bool plasmaActive)
-    {
-        laserLine.enabled = laserActive;
-        plasmaLine.enabled = plasmaActive;
-    }
-
-    [ClientRpc]
-    private void PlayLaserAudioClientRpc()
-    {
-        if (laserAudioSource != null && !laserAudioSource.isPlaying)
-        {
-            laserAudioSource.Play();
-            laserAudioSource.loop = true;
-        }
-    }
-
-    [ClientRpc]
-    private void StopLaserAudioClientRpc()
-    {
-        if (laserAudioSource != null && laserAudioSource.isPlaying)
-        {
-            laserAudioSource.Stop();
-        }
-    }
-
-    #endregion
 }

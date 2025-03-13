@@ -19,12 +19,21 @@ public class toolsManager : NetworkBehaviour
     NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     private int nextToolIndex;
 
+    private void Awake()
+    {
+        
+    }
+
     public override void OnNetworkSpawn()
     {
-        if (!IsOwner)
+        base.OnNetworkSpawn();
+
+        if (IsClient)
         {
-            Debug.Log("Quitting ToolManager OnNetworkSpawn");
-            return;
+            currentToolIndexNet.OnValueChanged += (oldIndex, newIndex) =>
+            {
+                UpdateToolClientRpc(newIndex);
+            };
         }
 
         toolAccessHandler = GameObject.Find("ToolAccessHandler");
@@ -37,6 +46,17 @@ public class toolsManager : NetworkBehaviour
 
         if (toolsCollection != null)
         {
+            foreach (Transform tool in toolsCollection.transform)
+            {
+                if (!tool.CompareTag("Hand"))
+                {
+                    tool.gameObject.SetActive(false);
+                }
+            }
+        }
+
+        if (toolsCollection != null)
+        {
             int children = toolsCollection.transform.childCount;
             Debug.Log("Tool Count: " + children);
             for (int i = 0; i < children; ++i){
@@ -46,7 +66,6 @@ public class toolsManager : NetworkBehaviour
                 {
                     nextTool.SetActive(false);
                 }
-                
                 Debug.Log("Tool hinzugefügt: " + toolsCollection.transform.GetChild(i).gameObject);
             }
         }
@@ -74,6 +93,7 @@ public class toolsManager : NetworkBehaviour
             {
                 tools[currentToolIndex].SetActive(false);
                 tools[index].SetActive(true);
+                ReactivateAllComponents(tools[index]);
                 currentToolIndex = index;
             }
         }
@@ -96,6 +116,7 @@ public class toolsManager : NetworkBehaviour
 
         currentToolIndexNet.Value = toolIndex;
         tools[toolIndex].SetActive(true);
+        ReactivateAllComponents(tools[toolIndex]);
 
         UpdateToolClientRpc(toolIndex);
     }
@@ -104,9 +125,13 @@ public class toolsManager : NetworkBehaviour
     private void UpdateToolClientRpc(int toolIndex)
     {
         foreach (var tool in tools)
+        {
             tool.SetActive(false);
+        }
+            
 
         tools[toolIndex].SetActive(true);
+        ReactivateAllComponents(tools[toolIndex]);
     }
 
     public void OnAccessDenied()
@@ -123,27 +148,38 @@ public class toolsManager : NetworkBehaviour
         }
 
         RequestToolSwitch();
+        UpdateToolClientRpc(nextToolIndex);
     }
 
-    //Veraltet
-    /*private void SwitchTool(){
-        tools[currentToolIndex].SetActive(false);
-        toolAccessHandler.GetComponent<ToolAccessHandler>().Release(currentToolIndex);
-        
-        if(canUse()){
-            Debug.Log("NextToolIndex: " + nextToolIndex);
-            Debug.Log("Switching tool to " + tools[nextToolIndex]);
-            tools[nextToolIndex].SetActive(true);
-            currentToolIndex = nextToolIndex;
-        }
-        else{
-            Debug.Log("Tool already in use...");
-            NextTool();
-        }
-    }*/
+    private void ReactivateAllComponents(GameObject obj)
+    {
+        if (obj == null) return;
 
-    //Veraltet
-    /*private bool canUse(){
-        return toolAccessHandler.GetComponent<ToolAccessHandler>().RequestAccess(nextToolIndex);
-    }*/
+        foreach (var script in obj.GetComponents<MonoBehaviour>())
+        {
+            script.enabled = true;
+        }
+
+        foreach (var renderer in obj.GetComponents<Renderer>())
+        {
+            renderer.enabled = true;
+        }
+
+        foreach (var light in obj.GetComponents<Light>())
+        {
+            light.enabled = true;
+        }
+
+        foreach (var particle in obj.GetComponents<ParticleSystem>())
+        {
+            particle.Play();
+        }
+
+        foreach (var lineRenderer in obj.GetComponents<LineRenderer>())
+        {
+            lineRenderer.enabled = true;
+        }
+
+        Debug.Log($"Reactivated all components on " + obj.name);
+    }
 }

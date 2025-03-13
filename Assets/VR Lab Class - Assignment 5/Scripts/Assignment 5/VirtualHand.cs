@@ -74,10 +74,9 @@ public class VirtualHand : NetworkBehaviour
 
         if (handVelocity.magnitude < velocityThreshold)
         {
-            handVelocity = Vector3.zero;  // Don't apply velocity if too small
+            handVelocity = Vector3.zero;
         }
 
-        // Smooth the velocity
         smoothedVelocity = Vector3.Lerp(smoothedVelocity, handVelocity, smoothingFactor);
     }
 
@@ -100,17 +99,15 @@ public class VirtualHand : NetworkBehaviour
                     }
                 }
 
-                // Attempt to get the follow script component.
                 CaptureBallFollowMode followScript = grabbedObject.GetComponent<CaptureBallFollowMode>();
                 if (followScript != null)
                 {
-                    // This disables the follow behavior so the ball stops tracking the spawn point.
                     followScript.DetachBall();
                 }
 
                 if (grabbedRb != null)
                 {
-                    grabbedRb.isKinematic = true; // Disable physics while held
+                    grabbedRb.isKinematic = true;
                     grabbedRb.useGravity = false;
                     Debug.Log("Set Rigidbody to kinematic without gravity");
                 }
@@ -144,7 +141,7 @@ public class VirtualHand : NetworkBehaviour
             {
                 if (grabbedRb != null)
                 {
-                    grabbedRb.isKinematic = false; // Enable physics again
+                    grabbedRb.isKinematic = false;
                     grabbedRb.useGravity = true;
 
                     if (IsOwner) // Only the server should apply physics updates

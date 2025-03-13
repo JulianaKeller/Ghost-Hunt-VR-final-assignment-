@@ -60,7 +60,6 @@ public class GeistBewegung : NetworkBehaviour
 
     void Start()
     {
-        //Get the components
         animator = GetComponent<Animator>();
         if (ghostMaterial != null)
         {

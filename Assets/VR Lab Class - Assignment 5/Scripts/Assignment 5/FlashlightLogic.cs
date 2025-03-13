@@ -27,23 +27,31 @@ public class FlashlightLogic : NetworkBehaviour
 
     void Start()
     {
+
         isFlashlightOn.OnValueChanged += OnFlashlightStateChanged;
     }
 
     private void OnFlashlightStateChanged(bool oldValue, bool newValue)
     {
+        Debug.Log("On Flashlight Value changed...");
         flashlightLight.enabled = newValue;
     }
 
     public override void OnNetworkSpawn()
     {
+        isFlashlightOn.OnValueChanged += OnFlashlightStateChanged;
         paralysisDuration = NetworkVariableManager.Instance.GetDifficultyProperties().ParalyzeDuration;
         cooldownDuration = NetworkVariableManager.Instance.GetDifficultyProperties().FlashlightCooldownDuration;
+
     }
 
     void OnEnable()
     {
+        isFlashlightOn.OnValueChanged += OnFlashlightStateChanged;
         canFlash = true;
+
+        paralysisDuration = NetworkVariableManager.Instance.GetDifficultyProperties().ParalyzeDuration;
+        cooldownDuration = NetworkVariableManager.Instance.GetDifficultyProperties().FlashlightCooldownDuration;
     }
 
     void OnDisable()
@@ -53,10 +61,9 @@ public class FlashlightLogic : NetworkBehaviour
 
     void Update()
     {
-        if (!IsOwner) return; // Ensure only the local player triggers flash
-
         if (triggerAction.action.WasPressedThisFrame() && canFlash)
         {
+            //Debug.Log("Flashing...");
             StartCoroutine(Flash());
         }
     }
@@ -69,8 +76,16 @@ public class FlashlightLogic : NetworkBehaviour
 
         canFlash = false;
 
-        // Enable the flashlight effect
-        FlashLightEffectClientRpc(true);
+        if (IsOwner)
+        {
+            //FlashLightEffectClientRpc(true); // will be called on all clients, including the owner
+        }
+        flashlightLight.enabled = true;
+        if (IsServer)
+        {
+            
+            isFlashlightOn.Value = true;
+        }
         //Debug.Log("Flash on.");
 
         // Raycast in front of the flashlight to detect ghosts
@@ -87,9 +102,17 @@ public class FlashlightLogic : NetworkBehaviour
             }
         }
 
-        // Flash duration before turning off
         yield return new WaitForSeconds(flashDuration);
-        FlashLightEffectClientRpc(false);
+
+        if (IsOwner)
+        {
+            //FlashLightEffectClientRpc(false);
+        }
+        flashlightLight.enabled = false;
+        if (IsServer)
+        {
+            isFlashlightOn.Value = false;
+        }
         //Debug.Log("Flash off.");
 
         // Cooldown before allowing another flash
@@ -97,15 +120,11 @@ public class FlashlightLogic : NetworkBehaviour
         canFlash = true;
     }
 
-    [ServerRpc]
-    private void ToggleFlashlightServerRpc(bool state)
-    {
-        isFlashlightOn.Value = state;
-    }
-
-    [ClientRpc]
+    /*[ClientRpc]
     private void FlashLightEffectClientRpc(bool state)
     {
-        ToggleFlashlightServerRpc(state);
-    }
+        flashlightLight.enabled = state;
+        
+        Debug.Log($"Flashlight toggled: " + state);
+    }*/
 }

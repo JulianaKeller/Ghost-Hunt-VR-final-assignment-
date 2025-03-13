@@ -39,6 +39,9 @@ public class VacuumGunLogic : NetworkBehaviour
     private Vector3 ghostInitialPosition;
     private Vector3 ghostInitialScale;
 
+    private NetworkVariable<Vector3> vacuumLineStart = new NetworkVariable<Vector3>();
+    private NetworkVariable<Vector3> vacuumLineEnd = new NetworkVariable<Vector3>();
+
     //private NetworkVariable<bool> isGhostVacuuming = new NetworkVariable<bool>(false);
 
     void OnDisable()
@@ -132,21 +135,38 @@ public class VacuumGunLogic : NetworkBehaviour
 
     void UpdateVacuumWindLine()
     {
-        vacuumWindLine.SetPosition(0, vacuumPoint.position);
-        vacuumWindLine.SetPosition(1, transform.position + transform.forward * vacuumRange);
+        if (!IsOwner) return;
+
+        Vector3 startPos = vacuumPoint.position;
+        Vector3 endPos = transform.position + transform.forward * vacuumRange;
+
+        vacuumWindLine.SetPosition(0, startPos);
+        vacuumWindLine.SetPosition(1, endPos);
         vacuumWindLine.enabled = true;
+
+        ShowVacuumWindLineServerRpc(startPos, endPos);
     }
 
     void UpdateVacuumWindLine(RaycastHit hit)
     {
-        vacuumWindLine.SetPosition(0, vacuumPoint.position); 
-        vacuumWindLine.SetPosition(1, hit.point);
+        if (!IsOwner) return;
+
+        Vector3 startPos = vacuumPoint.position;
+        Vector3 endPos = hit.point;
+
+        vacuumWindLine.SetPosition(0, startPos);
+        vacuumWindLine.SetPosition(1, endPos);
         vacuumWindLine.enabled = true;
+
+        ShowVacuumWindLineServerRpc(startPos, endPos);
     }
 
     void HideVacuumWindLine()
     {
+        if (!IsOwner) return;
+
         vacuumWindLine.enabled = false;
+        HideVacuumWindLineServerRpc();
     }
 
     void UpdateVacuumChargeUI()
@@ -390,6 +410,36 @@ public class VacuumGunLogic : NetworkBehaviour
             }
         }
     }
+
+    [ServerRpc]
+    void ShowVacuumWindLineServerRpc(Vector3 start, Vector3 end)
+    {
+        vacuumLineStart.Value = start;
+        vacuumLineEnd.Value = end;
+
+        ShowVacuumWindLineClientRpc(start, end);
+    }
+
+    [ClientRpc]
+    void ShowVacuumWindLineClientRpc(Vector3 start, Vector3 end)
+    {
+        vacuumWindLine.SetPosition(0, start);
+        vacuumWindLine.SetPosition(1, end);
+        vacuumWindLine.enabled = true;
+    }
+
+    [ServerRpc]
+    void HideVacuumWindLineServerRpc()
+    {
+        HideVacuumWindLineClientRpc();
+    }
+
+    [ClientRpc]
+    void HideVacuumWindLineClientRpc()
+    {
+        vacuumWindLine.enabled = false;
+    }
+
 
     #endregion
 }

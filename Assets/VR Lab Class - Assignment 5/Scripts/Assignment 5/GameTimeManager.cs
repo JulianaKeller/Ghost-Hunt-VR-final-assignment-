@@ -80,6 +80,7 @@ public class GameTimeManager : NetworkBehaviour
     public void RestartGame()
     {
         StartCoroutine(Restart());
+        StartCoroutine(UpdateGameTime());
     }
 
     public IEnumerator Restart()

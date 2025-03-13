@@ -126,23 +126,24 @@ public class SpawnGhosts : NetworkBehaviour
 
     public void DespawnAllGhostAndStopSpawning()
     {
-        if (IsServer)
-        {
-            // Create a copy of the list to avoid modifying it while iterating
-            List<GameObject> ghostsToDespawn = new List<GameObject>(activeGhosts);
+        // Create a copy of the list to avoid modifying it while iterating
+        List<GameObject> ghostsToDespawn = new List<GameObject>(activeGhosts);
 
-            foreach (GameObject ghost in ghostsToDespawn)
+        foreach (GameObject ghost in ghostsToDespawn)
+        {
+            NetworkObject netObj = ghost.GetComponent<NetworkObject>();
+            if (netObj != null && netObj.IsSpawned)
             {
-                NetworkObject netObj = ghost.GetComponent<NetworkObject>();
-                if (netObj != null && netObj.IsSpawned)
+                if (IsServer)
                 {
                     netObj.Despawn(true);
                 }
             }
-
-            activeGhosts.Clear(); // Clear the original list after iteration
-            spawningEnabled = false;
+            Destroy(ghost);
         }
+
+        activeGhosts.Clear(); // Clear the original list after iteration
+        spawningEnabled = false;
     }
 
     void SpawnGhost()

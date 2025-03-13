@@ -6,11 +6,11 @@ Audio:
 
 gameEndMusic (unchanged) - https://freesound.org/people/dominictreis/sounds/488963/ 
 
-vacuumNoise (unchanged) - 
+vacuumNoise (unchanged) - https://freesound.org/people/univ_lyon3/sounds/611866/
 
 vacuumSuckedInSound (unchanged) - https://pixabay.com/sound-effects/fx-reversed-vacuum-cinematic-riser-sound-effect-255508/
 
-environmental_sounds (unchanged) - 
+environmental_sounds (unchanged) - https://freesound.org/people/mycompasstv/sounds/787947/
 
 bg_music (unchanged) - https://freesound.org/people/Audio_Dread/sounds/528045/
 https://freesound.org/people/mycompasstv/sounds/787947/

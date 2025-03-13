@@ -8871,8 +8871,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 974017ef7e296e547a3b3b7a757f65c1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  isAlwaysParalyzed: 0
-  isAlwaysStunned: 0
+  isAlwaysParalyzed: 1
+  isAlwaysStunned: 1
   ghostPrefab: {fileID: 1088198057634680078, guid: 0eae14eaed0e1bd45b98c4dcc2c8b670, type: 3}
   spawnPointsParent: {fileID: 874803138}
   spawnInterval: 5

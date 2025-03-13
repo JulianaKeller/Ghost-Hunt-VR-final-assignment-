@@ -41,6 +41,16 @@ public class FlashlightLogic : NetworkBehaviour
         cooldownDuration = NetworkVariableManager.Instance.GetDifficultyProperties().FlashlightCooldownDuration;
     }
 
+    void OnEnable()
+    {
+        canFlash = true;
+    }
+
+    void OnDisable()
+    {
+        canFlash = false;
+    }
+
     void Update()
     {
         if (!IsOwner) return; // Ensure only the local player triggers flash

@@ -68,6 +68,12 @@ public class VacuumGunLogic : NetworkBehaviour
         }
     }
 
+    void Awake()
+    {
+        vacuumLineStart.OnValueChanged += (previous, current) => ShowVacuumWindLineClientRpc(vacuumLineStart.Value, vacuumLineEnd.Value);
+        vacuumLineEnd.OnValueChanged += (previous, current) => ShowVacuumWindLineClientRpc(vacuumLineStart.Value, vacuumLineEnd.Value);
+    }
+
     void Start()
     {
         HideVacuumWindLine();
@@ -94,8 +100,8 @@ public class VacuumGunLogic : NetworkBehaviour
     {
         if (!IsOwner) return;
 
-        UpdateVacuumChargeUI();
         UpdateVacuumWindLine();
+        UpdateVacuumChargeUI();
 
         if (triggerAction.action.IsPressed() && vacuumCharge > 0)
         {
@@ -135,38 +141,58 @@ public class VacuumGunLogic : NetworkBehaviour
 
     void UpdateVacuumWindLine()
     {
-        if (!IsOwner) return;
-
         Vector3 startPos = vacuumPoint.position;
         Vector3 endPos = transform.position + transform.forward * vacuumRange;
 
-        vacuumWindLine.SetPosition(0, startPos);
-        vacuumWindLine.SetPosition(1, endPos);
-        vacuumWindLine.enabled = true;
+        if (IsOwner)
+        {
+            vacuumWindLine.SetPosition(0, startPos);
+            vacuumWindLine.SetPosition(1, endPos);
 
-        ShowVacuumWindLineServerRpc(startPos, endPos);
+            if (isVacuuming)
+            {
+                ShowVacuumWindLine(startPos, endPos);
+            }
+            else
+            {
+                HideVacuumWindLine();
+            }
+        }
     }
 
     void UpdateVacuumWindLine(RaycastHit hit)
     {
-        if (!IsOwner) return;
-
         Vector3 startPos = vacuumPoint.position;
         Vector3 endPos = hit.point;
 
-        vacuumWindLine.SetPosition(0, startPos);
-        vacuumWindLine.SetPosition(1, endPos);
-        vacuumWindLine.enabled = true;
+        if (IsOwner)
+        {
+            vacuumWindLine.SetPosition(0, startPos);
+            vacuumWindLine.SetPosition(1, endPos);
 
-        ShowVacuumWindLineServerRpc(startPos, endPos);
+            if (isVacuuming)
+            {
+                ShowVacuumWindLine(startPos, endPos);
+            }
+            else
+            {
+                HideVacuumWindLine();
+            }
+        }
     }
 
     void HideVacuumWindLine()
     {
-        if (!IsOwner) return;
 
         vacuumWindLine.enabled = false;
         HideVacuumWindLineServerRpc();
+    }
+
+    void ShowVacuumWindLine(Vector3 startPos, Vector3 endPos)
+    {
+
+        vacuumWindLine.enabled = true;
+        ShowVacuumWindLineServerRpc(startPos, endPos);
     }
 
     void UpdateVacuumChargeUI()
@@ -416,6 +442,7 @@ public class VacuumGunLogic : NetworkBehaviour
     {
         vacuumLineStart.Value = start;
         vacuumLineEnd.Value = end;
+        vacuumWindLine.enabled = true;
 
         ShowVacuumWindLineClientRpc(start, end);
     }
@@ -428,9 +455,11 @@ public class VacuumGunLogic : NetworkBehaviour
         vacuumWindLine.enabled = true;
     }
 
+
     [ServerRpc]
     void HideVacuumWindLineServerRpc()
     {
+        vacuumWindLine.enabled = false;
         HideVacuumWindLineClientRpc();
     }
 

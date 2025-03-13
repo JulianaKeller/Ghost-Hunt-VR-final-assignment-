@@ -69,28 +69,35 @@ public class GhostFadeEffects : NetworkBehaviour
 
     void Update()
     {
-        // If the ghost is not stunned or paralyzed, start or restart fading:
-        if (!geistBewegung.IsStunned() && !geistBewegung.IsParalyzed())
+        if (IsServer) //only server should set the fading effects
         {
-            if (fadeCoroutine == null) // Ensure the routine is not already running
+            // If the ghost is not stunned or paralyzed, start or restart fading:
+            if (!geistBewegung.IsStunned() && !geistBewegung.IsParalyzed())
             {
-                fadeCoroutine = StartCoroutine(FadeInOutRoutine());
+                if (fadeCoroutine == null)
+                {
+                    fadeCoroutine = StartCoroutine(FadeInOutRoutine());
+                }
             }
+            else
+            {
+                // If the ghost is stunned or paralyzed, stop the fading routine
+                if (fadeCoroutine != null)
+                {
+                    StopCoroutine(fadeCoroutine);
+                    fadeCoroutine = null;
+                }
+                ResetAlphaToDefault();
+                SetParticleEmission(0f);
+            }
+        }
+        else
+        {
             // All Clients apply the fadeAlpha/emission rate network value to ensure synchronization
             ApplyFade();
             ApplyParticleFade(particleEmissionRate.Value);
         }
-        else
-        {
-            // If the ghost is stunned or paralyzed, stop the fading routine
-            if (fadeCoroutine != null)
-            {
-                StopCoroutine(fadeCoroutine);
-                fadeCoroutine = null; // Reset the coroutine reference
-            }
-            ResetAlphaToDefault();
-            SetParticleEmission(0f);
-        }
+        
     }
 
     #region Fading methods

@@ -159,7 +159,11 @@ public class GhostFadeEffects : NetworkBehaviour
             float newAlphaFactor = elapsedTime / duration;
 
             float newAlpha = Mathf.Lerp(startAlpha, targetAlpha, newAlphaFactor);
-            fadeAlpha.Value = newAlpha;
+
+            if (IsServer)
+            {
+                fadeAlpha.Value = newAlpha;
+            }
 
             yield return null; //continues execution here next frame
         }

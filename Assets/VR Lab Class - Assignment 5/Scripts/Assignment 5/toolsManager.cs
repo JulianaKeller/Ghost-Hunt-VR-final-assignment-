@@ -19,8 +19,29 @@ public class toolsManager : NetworkBehaviour
     NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     private int nextToolIndex;
 
+    private void Awake()
+    {
+        if (toolsCollection != null)
+        {
+            foreach (Transform tool in toolsCollection.transform)
+            {
+                tool.gameObject.SetActive(false);
+            }
+        }
+    }
+
     public override void OnNetworkSpawn()
     {
+        base.OnNetworkSpawn();
+
+        if (IsClient)
+        {
+            currentToolIndexNet.OnValueChanged += (oldIndex, newIndex) =>
+            {
+                UpdateToolClientRpc(newIndex);
+            };
+        }
+
         if (!IsOwner)
         {
             Debug.Log("Quitting ToolManager OnNetworkSpawn");
@@ -103,8 +124,12 @@ public class toolsManager : NetworkBehaviour
     [ClientRpc]
     private void UpdateToolClientRpc(int toolIndex)
     {
+        Debug.Log("Updating tool visibility on all clients");
+
         foreach (var tool in tools)
+        {
             tool.SetActive(false);
+        }
 
         tools[toolIndex].SetActive(true);
     }
@@ -123,27 +148,7 @@ public class toolsManager : NetworkBehaviour
         }
 
         RequestToolSwitch();
+        UpdateToolClientRpc(nextToolIndex);
     }
 
-    //Veraltet
-    /*private void SwitchTool(){
-        tools[currentToolIndex].SetActive(false);
-        toolAccessHandler.GetComponent<ToolAccessHandler>().Release(currentToolIndex);
-        
-        if(canUse()){
-            Debug.Log("NextToolIndex: " + nextToolIndex);
-            Debug.Log("Switching tool to " + tools[nextToolIndex]);
-            tools[nextToolIndex].SetActive(true);
-            currentToolIndex = nextToolIndex;
-        }
-        else{
-            Debug.Log("Tool already in use...");
-            NextTool();
-        }
-    }*/
-
-    //Veraltet
-    /*private bool canUse(){
-        return toolAccessHandler.GetComponent<ToolAccessHandler>().RequestAccess(nextToolIndex);
-    }*/
 }

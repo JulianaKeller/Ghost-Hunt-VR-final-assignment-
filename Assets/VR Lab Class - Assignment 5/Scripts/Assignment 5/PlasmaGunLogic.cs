@@ -91,9 +91,6 @@ public class PlasmaGunLogic : NetworkBehaviour
 
     private void Start()
     {
-        laserEnabled.OnValueChanged += (oldValue, newValue) => laserLine.enabled = newValue;
-        plasmaEnabled.OnValueChanged += (oldValue, newValue) => plasmaLine.enabled = newValue;
-
         laserStartPos.OnValueChanged += (oldValue, newValue) =>
         {
             laserLine.SetPosition(0, newValue);
@@ -108,6 +105,14 @@ public class PlasmaGunLogic : NetworkBehaviour
 
         laserEnabled.OnValueChanged += (oldValue, newValue) =>
         {
+            laserLine.enabled = newValue;
+            if (newValue) PlayLaserSound();
+            else StopLaserSound();
+        };
+
+        plasmaEnabled.OnValueChanged += (oldValue, newValue) =>
+        {
+            plasmaLine.enabled = newValue;
             if (newValue) PlayLaserSound();
             else StopLaserSound();
         };
@@ -206,12 +211,15 @@ public class PlasmaGunLogic : NetworkBehaviour
     {
         showLaserLine();
         HidePlasmaLine();
+        if (IsServer) SetLaserVisibilityClientRpc(true);
     }
 
     void StopFiring()
     {
         HideLaserLine();
         HidePlasmaLine();
+
+        if (IsServer) SetLaserVisibilityClientRpc(false);
 
         if (targetGhost)
         {
@@ -270,6 +278,7 @@ public class PlasmaGunLogic : NetworkBehaviour
         if (IsServer)
         {
             laserEndPos.Value = laserLine.GetPosition(1);
+            UpdateLaserClientRpc(laserStart, laserLine.GetPosition(1), targetGhost != null);
         }
     }
 
@@ -299,5 +308,31 @@ public class PlasmaGunLogic : NetworkBehaviour
             }
             yield return new WaitForSeconds(1f);
         }
+    }
+
+    [ClientRpc]
+    private void UpdateLaserClientRpc(Vector3 start, Vector3 end, bool isPlasma)
+    {
+        laserLine.SetPosition(0, start);
+        laserLine.SetPosition(1, end);
+        plasmaLine.SetPosition(0, start);
+        plasmaLine.SetPosition(1, end);
+
+        if (isPlasma)
+        {
+            HideLaserLine();
+            showPlasmaLine();
+        }
+        else
+        {
+            showLaserLine();
+            HidePlasmaLine();
+        }
+    }
+
+    [ClientRpc]
+    private void SetLaserVisibilityClientRpc(bool state)
+    {
+        laserLine.enabled = state;
     }
 }

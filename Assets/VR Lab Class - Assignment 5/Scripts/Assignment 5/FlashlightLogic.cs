@@ -27,7 +27,7 @@ public class FlashlightLogic : NetworkBehaviour
 
     void Start()
     {
-        isFlashlightOn.OnValueChanged += OnFlashlightStateChanged;
+        
     }
 
     private void OnFlashlightStateChanged(bool oldValue, bool newValue)
@@ -37,6 +37,12 @@ public class FlashlightLogic : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
+        isFlashlightOn.OnValueChanged += OnFlashlightStateChanged;
+        if (IsClient)
+        {
+            flashlightLight.enabled = isFlashlightOn.Value; // Sync initial state
+        }
+
         paralysisDuration = NetworkVariableManager.Instance.GetDifficultyProperties().ParalyzeDuration;
         cooldownDuration = NetworkVariableManager.Instance.GetDifficultyProperties().FlashlightCooldownDuration;
     }
@@ -96,6 +102,10 @@ public class FlashlightLogic : NetworkBehaviour
     [ClientRpc]
     private void FlashLightEffectClientRpc(bool state)
     {
-        ToggleFlashlightServerRpc(state);
+        flashlightLight.enabled = state; // Immediately enable/disable the flashlight
+        if (IsServer)
+        {
+            isFlashlightOn.Value = state; // Ensure server updates the network variable
+        }
     }
 }
